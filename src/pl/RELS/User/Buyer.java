@@ -12,6 +12,11 @@ public class Buyer extends User {
         super(name, surname, user, pass, bank, s);
     }
 
+    //Overload the constructor /3/
+    public Buyer(Server s){
+        super("Patryk", "Kowalski", "user2", "321", "987654321", s);
+    }
+
     //This main class is here to test some things, whether it works properly
     public static void main(String[] args){
         Server s = new Server();

@@ -17,6 +17,11 @@ public class Seller extends User {
         this.myOffers = new ArrayList<Offer>();
     }
 
+    //Overload the constructor /3/
+    public Seller(Server s){
+        super("Jakub", "Belter", "user", "123", "123456789", s);
+    }
+
     @Override
     public int login() {
         System.out.println("Welcome to the login sequence of Seller. You will be asked for your credentials.");
