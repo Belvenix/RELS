@@ -87,6 +87,18 @@ public class Buyer extends User {
         this.bankId = bankId;
     }
 
+    //This method is NOT SAFE
+    @Override
+    protected void setServer(Server server){
+        User.server = server;
+    }
+
+    //This method is NOT SAFE
+    @Override
+    protected void setUserId(long userId){
+        this.userId = userId;
+    }
+
     @Override
     public String getUsername() {
         return username;
@@ -104,7 +116,7 @@ public class Buyer extends User {
 
     @Override
     public Server getServer(){
-        return this.server;
+        return server;
     }
 
     @Override

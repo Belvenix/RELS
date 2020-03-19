@@ -51,6 +51,18 @@ public class Seller extends User {
         this.bankId = bankId;
     }
 
+    //This method is NOT SAFE
+    @Override
+    protected void setServer(Server server){
+        User.server = server;
+    }
+
+    //This method is NOT SAFE
+    @Override
+    protected void setUserId(long userId){
+        this.userId = userId;
+    }
+
     @Override
     public String getUsername() {
         return username;

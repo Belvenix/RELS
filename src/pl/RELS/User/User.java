@@ -75,6 +75,10 @@ public abstract class User {
      */
     protected abstract void setBankId(String bankId);
 
+    protected abstract void setServer(Server server);
+
+    protected abstract void setUserId(long userId);
+
     /**
      * Simple getter of username
      * @return - returns username
