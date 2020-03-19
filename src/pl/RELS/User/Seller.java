@@ -7,6 +7,10 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+// OOP principles /1/
+// Access control /2/
+// Overload /3.1/
+// Polymorphism /4/
 public class Seller extends User {
 
     //This variable holds all of offers that are yours o the market

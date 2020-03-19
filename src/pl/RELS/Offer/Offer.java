@@ -3,7 +3,8 @@ package pl.RELS.Offer;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 
-
+// OOP principles /1/
+// Access control /2/
 public class Offer {
 
     /**

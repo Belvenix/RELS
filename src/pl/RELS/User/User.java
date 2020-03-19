@@ -2,6 +2,10 @@ package pl.RELS.User;
 
 import pl.RELS.Server;
 
+
+// OOP principles /1/
+// Access control /2/
+// Abstract class for Seller and Buyer class /5/
 public abstract class User {
     protected String name;
     protected String surname;

@@ -6,6 +6,9 @@ import pl.RELS.Server;
 import java.sql.Timestamp;
 import java.util.Scanner;
 
+// OOP principles /1/
+// Overload /3.1/
+// Polymorphism /4/
 public class Buyer extends User {
 
     public Buyer(String name, String surname, String user, String pass, String bank, Server s) {

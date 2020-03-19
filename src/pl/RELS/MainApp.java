@@ -8,6 +8,7 @@ import java.util.Scanner;
 /**
  * Created by Jakub Belter on 18/03/2020.
  */
+// Polymorphism /4/ presented inside main method
 public class MainApp {
 
     protected static Server server;
@@ -41,6 +42,8 @@ public class MainApp {
             String bankId = scan.next();
 
             String test;
+
+            //Polymorphism /4/
             User user = null;
             do {
                 System.out.print("Please specify whether you want to be a seller or buyer (enter 'seller' to become seller and"+

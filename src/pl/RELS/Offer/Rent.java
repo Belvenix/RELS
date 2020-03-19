@@ -2,6 +2,8 @@ package pl.RELS.Offer;
 
 import java.sql.Timestamp;
 
+// OOP principles /1/
+// Override /3.2/
 public class Rent extends Offer {
     /**
      * Here is a constructor to our abstract class Offer.
