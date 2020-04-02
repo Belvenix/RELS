@@ -8,7 +8,7 @@ import java.util.Scanner;
 /**
  * Created by Jakub Belter on 18/03/2020.
  */
-// Polymorphism /4/ presented inside main method
+
 public class MainApp {
 
     protected static Server server;

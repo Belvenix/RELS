@@ -3,9 +3,7 @@ package pl.RELS.User;
 import pl.RELS.Server;
 
 
-// OOP principles /1/
-// Access control /2/
-// Abstract class for Seller and Buyer class /5/
+
 public abstract class User {
     protected String name;
     protected String surname;
@@ -38,6 +36,10 @@ public abstract class User {
         this.userId = this.getServer().currentUserId();
     }
 
+    //--------------------------------------------------------------------------------------------
+    //----------------------------------------METHODS---------------------------------------------
+    //--------------------------------------------------------------------------------------------
+
     /**
      * This method will be responsible for handling the login action of user (input operations too)
      *
@@ -61,6 +63,10 @@ public abstract class User {
      */
     protected abstract boolean authenticate(String username, String password);
 
+    //--------------------------------------------------------------------------------------------
+    //----------------------------------------SETTERS---------------------------------------------
+    //--------------------------------------------------------------------------------------------
+
     /**
      * Simple setter of username.
      * @param username - username given by user
@@ -82,6 +88,10 @@ public abstract class User {
     protected abstract void setServer(Server server);
 
     protected abstract void setUserId(long userId);
+
+    //--------------------------------------------------------------------------------------------
+    //----------------------------------------GETTERS---------------------------------------------
+    //--------------------------------------------------------------------------------------------
 
     /**
      * Simple getter of username

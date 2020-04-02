@@ -6,9 +6,7 @@ import pl.RELS.Server;
 import java.sql.Timestamp;
 import java.util.Scanner;
 
-// OOP principles /1/
-// Overload /3.1/
-// Polymorphism /4/
+
 public class Buyer extends User {
 
     public Buyer(String name, String surname, String user, String pass, String bank, Server s) {
@@ -21,6 +19,7 @@ public class Buyer extends User {
     }
 
     //This main class is here to test some things, whether it works properly
+
     public static void main(String[] args){
         Server s = new Server();
         //Here we create an instance of buyer to test this class

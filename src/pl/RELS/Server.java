@@ -10,8 +10,7 @@ import java.util.ArrayList;
  *
  * allOffers variable for now is having all of the offers inside the system.
  */
-// OOP principles /1/
-// Access control /2/
+
 public class Server {
     protected ArrayList<Offer> allOffers;
     protected long currentOfferId;

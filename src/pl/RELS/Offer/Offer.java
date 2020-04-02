@@ -1,10 +1,14 @@
 package pl.RELS.Offer;
 
+import pl.RELS.Server;
+import pl.RELS.User.Seller;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 
-// OOP principles /1/
-// Access control /2/
+// Comparators /2/
 public class Offer {
 
     /**
@@ -137,6 +141,145 @@ public class Offer {
         this.followers = new ArrayList<Long>();
     }
 
+    //Default constructor for testing purposes
+    //However we do need to pass Seller object to make it possible to "upload" the offer to server
+    public Offer(Seller s){
+        this.issueDate = new Timestamp(System.currentTimeMillis());
+        this.expirationDate = new Timestamp(System.currentTimeMillis());
+        this.address = "Polska;pomorskie;gdansk;wajdeloty;20;9";
+        this.price = 123456.75;
+        this.type = Offer.OfferType.SALE;
+        this.offerId = s.getServer().getCurrentOfferId();
+        this.userId = s.getUserId();
+        this.floor = Offer.FloorType.GROUND;
+        this.isFurnished = true;
+        this.surface = 720.50;
+        this.rooms = 5;
+        this.description = "Super apartament kupuj smiało!";
+        this.viewCounter = 0;
+        this.followers = new ArrayList<Long>();
+    }
+
+    //Constructor used for testing the Comparator Classes in the main method (Offer.class)
+
+    public Offer(Seller s, double price, double surface){
+        this.issueDate = new Timestamp(System.currentTimeMillis());
+        this.expirationDate = new Timestamp(System.currentTimeMillis());
+        this.address = "Polska;pomorskie;gdansk;wajdeloty;20;9";
+        this.price = price;
+        this.type = Offer.OfferType.SALE;
+        this.offerId = s.getServer().getCurrentOfferId();
+        this.userId = s.getUserId();
+        this.floor = Offer.FloorType.GROUND;
+        this.isFurnished = true;
+        this.surface = surface;
+        this.rooms = 5;
+        this.description = "Super apartament kupuj smiało!";
+        this.viewCounter = 0;
+        this.followers = new ArrayList<Long>();
+    }
+
+    //--------------------------------------------------------------------------------------------
+    //----------------------------------------METHODS---------------------------------------------
+    //--------------------------------------------------------------------------------------------
+
+    //Main class used for testing of two Comparator classes: PriceComparator and SurfaceComparator
+    public static void main(String[] args){
+        //First we initiate basic classes
+        Server sr = new Server();
+        Seller sl = new Seller(sr);
+
+        Offer[] offArr = new Offer[10];
+        //Then we upload ten different (in our exercise purpose) offers. The module here is to make the list not sorted
+        for (int i = 0; i < 10; i++){
+            if (i % 5 == 4){
+                offArr[i] = new Offer(sl, 4567400.0 + i * 43.0, 430 - i * 42.4);
+            }
+            else {
+                if (i % 2 == 0)
+                    offArr[i] = new Offer(sl, (i+1) * 1000.0, 4000.0 / (i+1));
+                else
+                    offArr[i] = new Offer(sl, 100000.0 / (i+1), 40.0 * (i+1));
+            }
+        }
+
+        //Now we will present three results: Default, Price and Surface sort.
+        //Default Sort - (no sort, because we dont have the interface implemented!)
+        System.out.println("Offer array, default (no) sort:\n" + Arrays.toString(offArr) + "\n");
+
+        //Price Sort
+        Arrays.sort(offArr, Offer.PriceComparator);
+        System.out.println("Offer array, price sort:\n" + Arrays.toString(offArr) + "\n");
+
+        //Surface Sort
+        Arrays.sort(offArr, Offer.SurfaceComparator);
+        System.out.println("Offer array, surface sort:\n" + Arrays.toString(offArr) + "\n");
+    }
+
+    /**
+     * Simple printer of our method. Only for testing purposes.
+     *
+     * WARNING! this returns different output compared to toString() method!
+     */
+    public void printMe(){
+        System.out.println("Offer id: " + this.offerId + " cost: " + this.price + " surface: " + this.surface);
+    }
+
+    @Override
+    //The variables that are returned are: offerId as id, issueDate, expirationDate, address, price and surface area.
+    public String toString(){
+        return "(id=" + this.userId + ", issueDate=" + this.issueDate + ", expirationDate=" + this.expirationDate +
+                ", address=" + this.address + ", price=" + this.price + ", surface=" + this.surface + ")\n";
+    }
+
+    //-----------------------------------------------------------------------------------------------
+    //--------------------------------------COMPARATORS/2/-------------------------------------------
+    //-----------------------------------------------------------------------------------------------
+
+    /** Represents a comparator that will be using price field in Offer class for the order
+     *
+     *  This class will be used inside the sort function for the array variable in the Database (Server class) to sort
+     *  in order all of the offers in the Database (Server class)
+     */
+    public static Comparator<Offer> PriceComparator = new Comparator<Offer>() {
+
+        /**
+         * This function is necessary for the Comparator implementation. Compares its two arguments for order.
+         *
+         * @param o1 - first object to be compared (inside the Array sort function)
+         * @param o2 - second object to be compared (inside the Array sort function)
+         * @return - returns the difference between first and second object's price (of the real estate offer)
+         */
+        @Override
+        public int compare(Offer o1, Offer o2) {
+            return (int) (o1.getPrice() - o2.getPrice());
+        }
+    };
+
+    /** Represents a comparator that will be using surface field in Offer class for the order
+     *
+     *  This class will be used inside the sort function for the array variable in the Database (Server class) to sort
+     *  in order all of the offers in the Database (Server class)
+     */
+    public static Comparator<Offer> SurfaceComparator = new Comparator<Offer>() {
+
+        /**
+         * This function is necessary for the Comparator implementation. Compares its two arguments for order.
+         *
+         * @param o1 - first object to be compared (inside the Array sort function)
+         * @param o2 - second object to be compared (inside the Array sort function)
+         * @return - returns the difference between first and second object's surface (of the real estate offer)
+         */
+        @Override
+        public int compare(Offer o1, Offer o2) {
+            return (int) (o1.getSurface() - o2.getSurface());
+        }
+    };
+
+    //--------------------------------------------------------------------------------------------
+    //----------------------------------------SETTERS---------------------------------------------
+    //--------------------------------------------------------------------------------------------
+
     /**
      * This setter sets a new value to the expirationDate.
      * <p>
@@ -211,9 +354,9 @@ public class Offer {
         this.description = description;
     }
 
-    public void printMe(){
-        System.out.println("Offer id: " + this.offerId + " cost: " + this.price);
-    }
+    //--------------------------------------------------------------------------------------------
+    //----------------------------------------GETTERS---------------------------------------------
+    //--------------------------------------------------------------------------------------------
 
     //Here is a huge section of simple getters.
     //Nothing else.
@@ -263,6 +406,10 @@ public class Offer {
 
     public OfferType getType() {
         return type;
+    }
+
+    public boolean getFurnished() {
+        return isFurnished;
     }
 
     public ArrayList<Long> getFollowers() {

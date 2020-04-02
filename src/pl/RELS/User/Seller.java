@@ -3,15 +3,15 @@ package pl.RELS.User;
 import pl.RELS.Offer.Offer;
 import pl.RELS.Server;
 
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Scanner;
 
-// OOP principles /1/
-// Access control /2/
-// Overload /3.1/
-// Polymorphism /4/
-public class Seller extends User {
+//This class implements deep copy /1/
+// and Comparable interface /2/
+public class Seller extends User implements Comparable<Seller>, Cloneable{
 
     //This variable holds all of offers that are yours o the market
     private ArrayList<Offer> myOffers;
@@ -21,9 +21,104 @@ public class Seller extends User {
         this.myOffers = new ArrayList<Offer>();
     }
 
-    //Overload the constructor /3/
+    //Most basic constructor for testing purposes
     public Seller(Server s){
         super("Jakub", "Belter", "user", "123", "123456789", s);
+        this.myOffers = new ArrayList<Offer>();
+    }
+
+    //--------------------------------------------------------------------------------------------
+    //----------------------------------------METHODS---------------------------------------------
+    //--------------------------------------------------------------------------------------------
+
+    //In this main we will be testing how our sorting works first (The Comparable interface one)
+    //And afterwards we will test the deepcopy (with comparison to shallow copy)
+    public static void main(String[] args){
+        //-----------Comparable/2/-----------
+        //First we need to initialize our server to be able to store the offers there.
+        Server s = new Server();
+
+        //This will represent the number of sellers in our array
+        int iter = 5;
+
+        //Then we will create an array of Sellers and we will give them some Offers
+        Seller[] selArr = new Seller[iter];
+        for (int i = 0; i < iter; i++){
+            selArr[i] = new Seller(s);
+            for (int j = 0; j < i; j++){
+                selArr[i].uploadOffer(new Offer(selArr[i]));
+            }
+        }
+
+        //Then we sort the array and show the result
+        Arrays.sort(selArr);
+        System.out.println("Sorting of Seller's list with the Comparable interface before offer deletion:\n"+ Arrays.toString(selArr));
+
+        //Afterwards we want to show what happens if we remove some offers - whether the sort really works.
+        //Hence we delete 2 offers at index 0 and 1 in the third and fifth seller.
+        selArr[2].delOffer(0); selArr[2].delOffer(0); selArr[4].delOffer(0);;selArr[4].delOffer(0);
+
+        //Then we show the results
+        Arrays.sort(selArr);
+        System.out.println("Sorting of Seller's list with the Comparable interface after offer deletion:\n"+ Arrays.toString(selArr));
+
+        //-----------DEEPCOPY/1/-----------
+        //Now we will test the deep copy
+        System.out.println("Copying list of sellers to two different variables: one with deepcloning and another without.");
+        Seller[] selArrDeepCopy = new Seller[iter];
+        Seller[] selArrCopy = new Seller[iter];
+        for (int i = 0; i < iter; i++){
+            try {
+                selArrDeepCopy[i] = (Seller) selArr[i].clone();
+            } catch (CloneNotSupportedException e) {
+                e.printStackTrace();
+            }
+            selArrCopy[i] = selArr[i];
+        }
+        System.out.println("Original list of Sellers:\n" + Arrays.toString(selArr));
+        System.out.println("Shallow copied list of Sellers:\n" + Arrays.toString(selArrCopy));
+        System.out.println("Deep copied list of Sellers:\n" + Arrays.toString(selArrDeepCopy));
+        System.out.println("Changing values in the original.\n");
+
+        //Some changes to the original
+        selArr[3].delOffer(0); selArr[3].delOffer(0);
+        selArr[1].setUserId(100);
+        //Here we can see that the original list changed, whereas the copy stayed.
+        System.out.println("Original list of Sellers, after changes:\n" + Arrays.toString(selArr));
+        System.out.println("Shallow copied list of Sellers, after changes:\n" + Arrays.toString(selArrCopy));
+        System.out.println("Deep copied list of Sellers, after changes:\n" + Arrays.toString(selArrDeepCopy));
+
+    }
+
+    //The cloning
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        Seller s = new Seller(this.getServer());
+        s.setUsername(this.getUsername());
+        s.setBankId(this.getBankId());
+        s.setPassword(this.getPassword());
+        s.setUserId(this.getUserId());
+        for(Offer offer: this.getMyOffers()){
+            //Here is a clue of the deep copy:
+            //We copy the offer object so that it is not the same reference
+            //Some values are the same like address and price, however some are new
+            //Like offerId as well as viewcounter or list of followers (since no one follows the copy)
+            Offer o = new Offer(new Timestamp(System.currentTimeMillis()),
+                    new Timestamp(System.currentTimeMillis()),
+                    offer.getAddress(),
+                    offer.getPrice(),
+                    offer.getType(),
+                    s.getServer().getCurrentOfferId(),
+                    s.getUserId(),
+                    offer.getFloor(),
+                    offer.getFurnished(),
+                    offer.getSurface(),
+                    offer.getRooms(),
+                    offer.getDescription()
+                    );
+            s.uploadOffer(o);
+        }
+        return s;
     }
 
     @Override
@@ -43,62 +138,6 @@ public class Seller extends User {
     @Override
     protected boolean authenticate(String username, String password) {
         return this.getUsername().equals(username) && this.getPassword().equals(password);
-    }
-
-    @Override
-    protected void setUsername(String username) {
-        this.username = username;
-    }
-
-    @Override
-    protected void setPassword(String password) {
-        this.password = password;
-    }
-
-    @Override
-    protected void setBankId(String bankId) {
-        this.bankId = bankId;
-    }
-
-    //This method is NOT SAFE
-    @Override
-    protected void setServer(Server server){
-        User.server = server;
-    }
-
-    //This method is NOT SAFE
-    @Override
-    protected void setUserId(long userId){
-        this.userId = userId;
-    }
-
-    @Override
-    public String getUsername() {
-        return username;
-    }
-
-    @Override
-    protected String getPassword() {
-        return password;
-    }
-
-    @Override
-    public String getBankId() {
-        return bankId;
-    }
-
-    public ArrayList<Offer> getMyOffers(){
-        return this.myOffers;
-    }
-
-    @Override
-    public Server getServer(){
-        return server;
-    }
-
-    @Override
-    public long getUserId() {
-        return this.userId;
     }
 
     //Main loop of the seller class
@@ -263,8 +302,115 @@ public class Seller extends User {
         this.uploadOffer(offer);
     }
 
+    /**
+     * Simple offer deleter handler which deletes on index i. This will delete the offer in both the Seller and Server.
+     *
+     * @param i - index at which we delete our offer
+     */
+    public void delOffer(int i){
+        Offer o = this.getMyOffers().get(i);
+        this.getServer().delOffer(o);
+        this.getMyOffers().remove(i);
+    }
+
+    /**
+     * Simple offer deleter handler which deletes Object o. This will delete the offer in both the Seller and Server
+     * @param o - Offer object to be deleted
+     */
+    public void delOffer(Offer o){
+        int i = this.getMyOffers().indexOf(o);
+        this.getServer().delOffer(o);
+        this.getMyOffers().remove(i);
+    }
+
+    /**
+     * Simple offer upload handler. This will add the offer in both the Seller and the Server.
+     * @param o - Offer object that is going to be added to both Seller instance and the Server.
+     */
     public void uploadOffer(Offer o){
         this.getServer().addOffer(o);
         this.getMyOffers().add(o);
     }
+
+    /**
+     * This function will be used for sorting sellers list length.
+     *
+     * @param o - Other Seller object that we compareTo
+     * @return - returns a difference between sizes of the Sellers offers.
+     */
+    @Override
+    public int compareTo(Seller o) {
+        return this.getMyOffers().size() - o.getMyOffers().size();
+    }
+
+    @Override
+    public String toString(){
+        return  "(id=" + this.userId + ", #offers=" + this.getMyOffers().size() + ")";
+    }
+
+    //--------------------------------------------------------------------------------------------
+    //----------------------------------------SETTERS---------------------------------------------
+    //--------------------------------------------------------------------------------------------
+
+    @Override
+    protected void setUsername(String username) {
+        this.username = username;
+    }
+
+    @Override
+    protected void setPassword(String password) {
+        this.password = password;
+    }
+
+    @Override
+    protected void setBankId(String bankId) {
+        this.bankId = bankId;
+    }
+
+    //This method is NOT SAFE
+    @Override
+    protected void setServer(Server server){
+        User.server = server;
+    }
+
+    //This method is NOT SAFE
+    @Override
+    protected void setUserId(long userId){
+        this.userId = userId;
+    }
+
+    //--------------------------------------------------------------------------------------------
+    //----------------------------------------GETTERS---------------------------------------------
+    //--------------------------------------------------------------------------------------------
+
+    @Override
+    public String getUsername() {
+        return username;
+    }
+
+    @Override
+    protected String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getBankId() {
+        return bankId;
+    }
+
+    public ArrayList<Offer> getMyOffers(){
+        return this.myOffers;
+    }
+
+    @Override
+    public Server getServer(){
+        return server;
+    }
+
+    @Override
+    public long getUserId() {
+        return this.userId;
+    }
+
+
 }
