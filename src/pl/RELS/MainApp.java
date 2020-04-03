@@ -6,10 +6,11 @@ import pl.RELS.User.User;
 
 import java.util.*;
 
-/**
- * Created by Jakub Belter on 18/03/2020.
+/** This class represents our Real Estate Listing System application
+ * It contains a Server class to handle the storage of the offers as well as a main function that works like an app for
+ * end user. We may login put some offers and buy some offers
+ * @author jbelter
  */
-
 public class MainApp {
 
     //Fields
@@ -22,7 +23,6 @@ public class MainApp {
 
     //----------------------------------------METHODS---------------------------------------------
 
-    //This weird structure was due to the fact that main is static and I wanted to go around it.
     public static void main(String[] args) {
         MainApp platform = new MainApp();
         platform.runMain();
@@ -88,11 +88,14 @@ public class MainApp {
 
     //Proper address format
     //Country;State;City;Street;BuildingNumber;ApartmentNumber
+
+
     class Validator implements Runnable{
+
         Thread myThread;
         Server s;
-        Set<String> validCountries;
-        Set<String> validCities;
+        HashSet<String> validCountries;
+        HashSet<String> validCities;
         long validAddresses = 0;
         long invalidAddresses = 0;
 
@@ -110,22 +113,37 @@ public class MainApp {
         public void run(){
             ArrayList<Offer> offArr = this.s.getAllOffers();
             for (Offer o : offArr){
-                String[] oAddress = o.getAddress().split(";");
-                if (oAddress.length == 6){
-                    if (validCountries.contains(oAddress[0]) && validCities.contains(oAddress[1]) &&
-                            this.isInt(oAddress[5])){
-                        validAddresses += 1;
-                    }
-                    else
-                        invalidAddresses += 1;
+                if(checkAddress(o.getAddress(), validCountries, validCities)){
+                    validAddresses += 1;
                 }
-                else{
+                else {
                     invalidAddresses += 1;
                 }
             }
         }
 
-        //From stackoverflow (the most robust isInt)
+        /** This function check the validity of our String address.
+         *
+         * @param address - String to be parsed and checked for validity
+         * @param validCountries - A String HashSet that contains a list of valid countries
+         * @param validCities - A String HashSet that contains a list of valid cities
+         * @return - returns true if the address is valid, false otherwise
+         */
+        private boolean checkAddress(String address, HashSet<String> validCountries, HashSet<String> validCities){
+            String[] s = address.split(";");
+            if (s.length == 6){
+                return validCountries.contains(s[0]) && validCities.contains(s[1]) &&
+                        isInt(s[5]);
+            }
+            return false;
+        }
+
+        /** This function checks whether the argument is a valid String, however it does not check whether int might be no large
+         * to be stored inside int
+         *
+         * @param str - String to be tested
+         * @return return true if the String is an integer, false otherwise
+         */
         public boolean isInt(String str) {
             if (str == null) {
                 return false;
@@ -153,8 +171,7 @@ public class MainApp {
 
     //----------------------------------------GETTERS---------------------------------------------
 
-    /**
-     * A simple getter for Server in MainApp class
+    /** A simple getter for Server in MainApp class
      * @return - Server field of MainApp
      */
     public Server getServer(){
@@ -163,8 +180,7 @@ public class MainApp {
 
     //----------------------------------------SETTERS---------------------------------------------
 
-    /**
-     * A simple Server setter for MainApp class
+    /** A simple Server setter for MainApp class
      * @param s - Initialized Server object
      */
     private void setServer(Server s){

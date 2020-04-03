@@ -9,11 +9,15 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 // Comparators /2/
+
+/**
+ * Offer class handles everything related to offers. It handles uploading and deleting offers as well as their proper
+ * creation (although the input of the user is handled inside Seller class)
+ */
 public class Offer {
 
-    /**
-     * Enum Type that gives us values for most common types of offers we will have in our system. In the future we may
-     * change it so we will check them via instanceof() syntax
+    /** Enum Type that gives us values for most common types of offers we will have in our system.
+     * In the future we may change it so we will check them via instanceof() syntax
      */
     public enum OfferType{
         SALE(0),
@@ -30,9 +34,8 @@ public class Offer {
         }
     }
 
-    /**
-     * Enum Type that gives us values for most common types of floor levels in our offers. The namings should be
-     * self explanatory. Also added some int values functionality for ease of use.
+    /** Enum Type that gives us values for most common types of floor levels in our offers.
+     * The namings should be self explanatory. Also added some int values functionality for ease of use.
      */
     public enum FloorType{
         GROUND(0),
@@ -72,8 +75,8 @@ public class Offer {
     protected int viewCounter;
     protected ArrayList<Long> followers;
 
-    /**
-     * Here is a constructor to our abstract class Offer.
+    /** Here is a constructor to our abstract class Offer.
+     *
      * <p>
      *     It is worth mentioning here what all of the variables actually mean in our program.
      *     On top of the explanation of each variable one important thing. If someone decides to buy an apartment
@@ -216,8 +219,7 @@ public class Offer {
         System.out.println("Offer array, surface sort:\n" + Arrays.toString(offArr) + "\n");
     }
 
-    /**
-     * Simple printer of our method. Only for testing purposes.
+    /** Simple printer of our method. Only for testing purposes.
      *
      * WARNING! this returns different output compared to toString() method!
      */
@@ -243,8 +245,7 @@ public class Offer {
      */
     public static Comparator<Offer> PriceComparator = new Comparator<Offer>() {
 
-        /**
-         * This function is necessary for the Comparator implementation. Compares its two arguments for order.
+        /** This function is necessary for the Comparator implementation. Compares its two arguments for order.
          *
          * @param o1 - first object to be compared (inside the Array sort function)
          * @param o2 - second object to be compared (inside the Array sort function)
@@ -263,8 +264,7 @@ public class Offer {
      */
     public static Comparator<Offer> SurfaceComparator = new Comparator<Offer>() {
 
-        /**
-         * This function is necessary for the Comparator implementation. Compares its two arguments for order.
+        /** This function is necessary for the Comparator implementation. Compares its two arguments for order.
          *
          * @param o1 - first object to be compared (inside the Array sort function)
          * @param o2 - second object to be compared (inside the Array sort function)
@@ -280,8 +280,7 @@ public class Offer {
     //----------------------------------------SETTERS---------------------------------------------
     //--------------------------------------------------------------------------------------------
 
-    /**
-     * This setter sets a new value to the expirationDate.
+    /** This setter sets a new value to the expirationDate.
      * <p>
      *     We want this behaviour only with expirationDate and not with issueDate because we can give an option
      *     to extend the offer validity time not the time it was issued. If we want to change the issueDate then
@@ -294,8 +293,8 @@ public class Offer {
         this.expirationDate = tmsp;
     }
 
-    /**
-     * This setter sets a new value to the address variable.
+    /** This setter sets a new value to the address variable.
+     *
      * @param address - String address that would be formatted like this:
      *                Country;State;City;Street;BuildingNumber;ApartmentNumber
      */
@@ -303,8 +302,8 @@ public class Offer {
         this.address = address;
     }
 
-    /**
-     * This setter sets a new value to the price variable
+    /** This setter sets a new value to the price variable
+     *
      * @param price - double variable represents new value in dollars
      */
     public void setPrice(double price){
@@ -316,9 +315,9 @@ public class Offer {
         this.floor = floor;
     }
 
-    /**
-     * This is a temporary setter for the followers list. In the future we might change it to some kind of append
+    /** This is a temporary setter for the followers list. In the future we might change it to some kind of append
      * or delete kind of setter.
+     *
      * @param followers - new list of user ids that follow the specific offer
      */
     public void setFollowers(ArrayList<Long> followers) {
@@ -340,9 +339,9 @@ public class Offer {
         this.surface = surface;
     }
 
-    /**
-     * This is a temporary setter for the view counter. In the future we might change it to some kind of append
+    /** This is a temporary setter for the view counter. In the future we might change it to some kind of append
      * or delete kind of setter.
+     *
      * @param viewCounter - new int of how many views the offer has
      */
     public void setViewCounter(int viewCounter) {

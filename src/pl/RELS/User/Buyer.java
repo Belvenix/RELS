@@ -6,7 +6,10 @@ import pl.RELS.Server;
 import java.sql.Timestamp;
 import java.util.Scanner;
 
-
+/**
+ * This class is responsible for handling Buyer type user properly. It contains additional methods which are not inherited
+ * from User like buy offer. Also the show offer method is different from the seller method.
+ */
 public class Buyer extends User {
 
     public Buyer(String name, String surname, String user, String pass, String bank, Server s) {
@@ -18,8 +21,11 @@ public class Buyer extends User {
         super("Patryk", "Kowalski", "user2", "321", "987654321", s);
     }
 
-    //This main class is here to test some things, whether it works properly
+    //--------------------------------------------------------------------------------------------
+    //----------------------------------------METHODS---------------------------------------------
+    //--------------------------------------------------------------------------------------------
 
+    //This main class is here to test some things, whether it works properly
     public static void main(String[] args){
         Server s = new Server();
         //Here we create an instance of buyer to test this class
@@ -79,57 +85,6 @@ public class Buyer extends User {
             return false;
     }
 
-    @Override
-    protected void setUsername(String username) {
-        this.username = username;
-    }
-
-    @Override
-    protected void setPassword(String password) {
-        this.password = password;
-    }
-
-    @Override
-    protected void setBankId(String bankId) {
-        this.bankId = bankId;
-    }
-
-    //This method is NOT SAFE
-    @Override
-    protected void setServer(Server server){
-        User.server = server;
-    }
-
-    //This method is NOT SAFE
-    @Override
-    protected void setUserId(long userId){
-        this.userId = userId;
-    }
-
-    @Override
-    public String getUsername() {
-        return username;
-    }
-
-    @Override
-    protected String getPassword() {
-        return password;
-    }
-
-    @Override
-    public String getBankId() {
-        return bankId;
-    }
-
-    @Override
-    public Server getServer(){
-        return server;
-    }
-
-    @Override
-    public long getUserId() {
-        return this.userId;
-    }
 
     //More explanation in abstract class
     @Override
@@ -147,8 +102,8 @@ public class Buyer extends User {
             String token = ""; //A token that will be just useful variable
             while (true){
                 System.out.println( "Specify want you want to do (enter 'show' to show every offer, enter 'buy'"+
-                                    " to buy a real estate, 'logout' to logout of your account and 'quit' to quit "+
-                                    "program entirely): ");
+                        " to buy a real estate, 'logout' to logout of your account and 'quit' to quit "+
+                        "program entirely): ");
                 Scanner scan = new Scanner(System.in);
                 token = scan.next();
                 switch (token) { //Switch because it was suggested
@@ -196,4 +151,65 @@ public class Buyer extends User {
     private void buyOffer(){
         System.out.println("You bought an offer!");
     }
+
+    //--------------------------------------------------------------------------------------------
+    //----------------------------------------SETTERS---------------------------------------------
+    //--------------------------------------------------------------------------------------------
+
+    @Override
+    protected void setUsername(String username) {
+        this.username = username;
+    }
+
+    @Override
+    protected void setPassword(String password) {
+        this.password = password;
+    }
+
+    @Override
+    protected void setBankId(String bankId) {
+        this.bankId = bankId;
+    }
+
+    //This method is NOT SAFE
+    @Override
+    protected void setServer(Server server){
+        User.server = server;
+    }
+
+    //This method is NOT SAFE
+    @Override
+    protected void setUserId(long userId){
+        this.userId = userId;
+    }
+
+    //--------------------------------------------------------------------------------------------
+    //----------------------------------------GETTERS---------------------------------------------
+    //--------------------------------------------------------------------------------------------
+
+    @Override
+    public String getUsername() {
+        return username;
+    }
+
+    @Override
+    protected String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getBankId() {
+        return bankId;
+    }
+
+    @Override
+    public Server getServer(){
+        return server;
+    }
+
+    @Override
+    public long getUserId() {
+        return this.userId;
+    }
+
 }

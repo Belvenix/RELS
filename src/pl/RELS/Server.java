@@ -4,23 +4,27 @@ import pl.RELS.Offer.Offer;
 
 import java.util.ArrayList;
 
-/**
- * This class is responsible for handling all of the data. Per first creation it would be a very simple class that would
- * later on handle SQL code etc.
- *
- * allOffers variable for now is having all of the offers inside the system.
+/** This class is responsible for handling all of the data like a Server Manager.
+ * Per first creation it would be a very simple class that would later on handle SQL code etc.
  */
-
 public class Server {
+
+    /** allOffers variable for now is having all of the offers inside the system.
+     */
     protected ArrayList<Offer> allOffers;
+    /** currentOfferId field has current offer id. It will increment per one added offer.
+     */
     protected long currentOfferId;
+    /** currentUserId field has current user id.
+     * In the future It will increment per one added user (not yet supported!).
+     */
     protected long currentUserId;
+
     public ArrayList<Offer> getAllOffers() {
         return allOffers;
     }
 
-    /**
-     * This is a function of mainApp that handles how to add an offer to the system.
+    /** This is a function of mainApp that handles how to add an offer to the system.
      *
      * @param o - this is properly initialized Offer object to be added to the list.
      * @return - returns 1 if everything went great,
@@ -37,8 +41,7 @@ public class Server {
         }
     }
 
-    /**
-     * This is a simple function that deletes a certain offer object from the list after the buyer buys it.
+    /** This is a simple function that deletes a certain offer object from the list after the buyer buys it.
      * @param o - an Offer object to be deleted.
      * @return - returns 1 if it deletes the object.
      *           returns -1 if something goes wrong.

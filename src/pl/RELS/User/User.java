@@ -3,7 +3,11 @@ package pl.RELS.User;
 import pl.RELS.Server;
 
 
-
+/**
+ * Abstraction of the User. It will handle all of the user input (in the CLI) as well as handling app's functions like
+ * putting the real estate for sale or act of buying it or even renting. Furthermore it contains some functions related
+ * to logging in etc.
+ */
 public abstract class User {
     protected String name;
     protected String surname;
@@ -13,8 +17,7 @@ public abstract class User {
     protected long userId;
     protected static Server server;
 
-    /**
-     * This is a constructor for abstract User class
+    /** This is a constructor for abstract User class
      *
      * <p>
      *     This abstract class is responsible for abstraction of user. We may in the future add more classes to that,
@@ -40,8 +43,7 @@ public abstract class User {
     //----------------------------------------METHODS---------------------------------------------
     //--------------------------------------------------------------------------------------------
 
-    /**
-     * This method will be responsible for handling the login action of user (input operations too)
+    /** This method will be responsible for handling the login action of user (input operations too)
      *
      * <p>
      *     In the beginning the passwords wont be hashed nor stored for simplicity. Although later on it will look
@@ -55,8 +57,8 @@ public abstract class User {
      */
     public abstract int login();
 
-    /**
-     * This function will authenticate the user if valid credentials (username and password) are given
+    /** This function will authenticate the user if valid credentials (username and password) are given
+     *
      * @param username - username given by user trying to log in
      * @param password - password given by user trying to log in
      * @return true if there were good credentials given false otherwise
@@ -67,20 +69,20 @@ public abstract class User {
     //----------------------------------------SETTERS---------------------------------------------
     //--------------------------------------------------------------------------------------------
 
-    /**
-     * Simple setter of username.
+    /** Simple setter of username.
+     *
      * @param username - username given by user
      */
     protected abstract void setUsername(String username);
 
-    /**
-     * Simple setter of password. Might be restricted later.
+    /** Simple setter of password. Might be restricted later.
+     *
      * @param password - password given by user
      */
     protected abstract void setPassword(String password);
 
-    /**
-     * Simple setter of bankId. Might be restricted later.
+    /** Simple setter of bankId. Might be restricted later.
+     *
      * @param bankId - bank id (credit card) given by user
      */
     protected abstract void setBankId(String bankId);
@@ -93,20 +95,20 @@ public abstract class User {
     //----------------------------------------GETTERS---------------------------------------------
     //--------------------------------------------------------------------------------------------
 
-    /**
-     * Simple getter of username
+    /** Simple getter of username
+     *
      * @return - returns username
      */
     public abstract String getUsername();
 
-    /**
-     * Simple getter of password. Might be deleted or restricted later.
+    /** Simple getter of password. Might be deleted or restricted later.
+     *
      * @return - password in string format (not hashed yet)
      */
     protected abstract String getPassword();
 
-    /**
-     * Simple getter of bank id (credit card). Might be deleted or restricted later.
+    /** Simple getter of bank id (credit card). Might be deleted or restricted later.
+     *
      * @return - bank id (credit card) number
      */
     public abstract String getBankId();
@@ -115,8 +117,8 @@ public abstract class User {
 
     public abstract long getUserId();
 
-    /**
-     * This is a function that takes control of the program for the time being (until the logout or until user dont want
+    /** This is a function that takes control of the program for the time being (until the logout or until user dont want
+     *
      *  to interact with it)
      * @return -    returns -1 if it was failed login sequence
      *              returns 0 if user decided to logout and continue with program
@@ -125,8 +127,8 @@ public abstract class User {
      */
     public abstract int actionLoop();
 
-    /**
-     * This method might be transported to application itself. More of a handler of situation.
+    /** This method show all the offers to the user.
+     * Might be transported to application in the future. More of a handler of situation.
      */
     public abstract void showOffers();
 }

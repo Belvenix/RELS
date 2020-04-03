@@ -11,6 +11,11 @@ import java.util.Scanner;
 
 //This class implements deep copy /1/
 // and Comparable interface /2/
+
+/**
+ * This class handles all of the Seller type user input. Currently only CLI is supported. Contains additional methods compared
+ * to User class which include upload offer handler, and their proper deletion from server
+ */
 public class Seller extends User implements Comparable<Seller>, Cloneable{
 
     //This variable holds all of offers that are yours o the market
@@ -187,8 +192,11 @@ public class Seller extends User implements Comparable<Seller>, Cloneable{
         return 2;
     }
 
-    //Worth noting fact is that seller showOffers shows only offers created by you which is different to buyer showOffer
-    //method which presents all available offers
+    /** Method responsible for showing the offers
+     *
+     * Worth noting fact is that seller showOffers shows only offers created by you which is different to buyer showOffer
+     * method which presents all available offers
+     */
     @Override
     public void showOffers() {
         //First check whether there are any offers if yes loop through them and print them, otherwise print string
@@ -202,8 +210,9 @@ public class Seller extends User implements Comparable<Seller>, Cloneable{
         }
     }
 
-    //As the name suggests it puts an offer to public
-    //This handles the code for listing new offer
+    /** Method responsible for handling user input for creating the offer. Right now only CLI is available
+     *
+     */
     public void putOffer(){
         Scanner scan = new Scanner(System.in);
 
@@ -332,8 +341,7 @@ public class Seller extends User implements Comparable<Seller>, Cloneable{
         this.getMyOffers().add(o);
     }
 
-    /**
-     * This function will be used for sorting sellers list length.
+    /** This function will be used for sorting sellers list length.
      *
      * @param o - Other Seller object that we compareTo
      * @return - returns a difference between sizes of the Sellers offers.

@@ -2,10 +2,13 @@ package pl.RELS.Offer;
 
 import java.sql.Timestamp;
 
-
+/**
+ * Extended Offer Class - Rent will handle renting of the real estates.
+ * For now it has only different printMe() method.
+ */
 public class Rent extends Offer {
-    /**
-     * Here is a constructor to our abstract class Offer.
+    /** Here is a constructor to our class Rent.
+     *
      * <p>
      * It is worth mentioning here what all of the variables actually mean in our program.
      * On top of the explanation of each variable one important thing. If someone decides to buy an apartment
