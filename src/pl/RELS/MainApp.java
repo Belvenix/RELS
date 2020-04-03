@@ -1,9 +1,10 @@
 package pl.RELS;
+import pl.RELS.Offer.Offer;
 import pl.RELS.User.Buyer;
 import pl.RELS.User.Seller;
 import pl.RELS.User.User;
 
-import java.util.Scanner;
+import java.util.*;
 
 /**
  * Created by Jakub Belter on 18/03/2020.
@@ -11,19 +12,23 @@ import java.util.Scanner;
 
 public class MainApp {
 
+    //Fields
+
     protected static Server server;
 
     public MainApp(){
         server = new Server();
     }
 
+    //----------------------------------------METHODS---------------------------------------------
+
     //This weird structure was due to the fact that main is static and I wanted to go around it.
     public static void main(String[] args) {
         MainApp platform = new MainApp();
-        platform.run();
+        platform.runMain();
     }
 
-    public void run(){
+    public void runMain(){
         Scanner scan = new Scanner(System.in); // Initialize a new scanner object
         while (true){
             System.out.println( "Welcome to the Real Estate Listing System!" +
@@ -75,11 +80,93 @@ public class MainApp {
         }
     }
 
-    //This method simply gets server
+    public void runTest(){
+
+    }
+
+    //----------------------------------------THREADS---------------------------------------------
+
+    //Proper address format
+    //Country;State;City;Street;BuildingNumber;ApartmentNumber
+    class Validator implements Runnable{
+        Thread myThread;
+        Server s;
+        Set<String> validCountries;
+        Set<String> validCities;
+        long validAddresses = 0;
+        long invalidAddresses = 0;
+
+        Validator(Server s){
+            myThread = new Thread(this, "Address validator");
+            this.s = s;
+            validCountries = new HashSet<>(Arrays.asList("Poland", "Germany", "France"));
+            validCities = new HashSet<>(Arrays.asList("Gdansk", "Warsaw", "Cracow", "Berlin", "Hamburg", "Monachium",
+                    "Paris", "Marseilles", "Lyon"));
+            System.out.println("Thread for address validation has been created" + myThread);
+            myThread.start();
+        }
+
+        @Override
+        public void run(){
+            ArrayList<Offer> offArr = this.s.getAllOffers();
+            for (Offer o : offArr){
+                String[] oAddress = o.getAddress().split(";");
+                if (oAddress.length == 6){
+                    if (validCountries.contains(oAddress[0]) && validCities.contains(oAddress[1]) &&
+                            this.isInt(oAddress[5])){
+                        validAddresses += 1;
+                    }
+                    else
+                        invalidAddresses += 1;
+                }
+                else{
+                    invalidAddresses += 1;
+                }
+            }
+        }
+
+        //From stackoverflow (the most robust isInt)
+        public boolean isInt(String str) {
+            if (str == null) {
+                return false;
+            }
+            int length = str.length();
+            if (length == 0) {
+                return false;
+            }
+            int i = 0;
+            if (str.charAt(0) == '-') {
+                if (length == 1) {
+                    return false;
+                }
+                i = 1;
+            }
+            for (; i < length; i++) {
+                char c = str.charAt(i);
+                if (c <= '/' || c >= ':') {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    //----------------------------------------GETTERS---------------------------------------------
+
+    /**
+     * A simple getter for Server in MainApp class
+     * @return - Server field of MainApp
+     */
     public Server getServer(){
         return server;
     }
 
+    //----------------------------------------SETTERS---------------------------------------------
+
+    /**
+     * A simple Server setter for MainApp class
+     * @param s - Initialized Server object
+     */
     private void setServer(Server s){
         server = s;
     }
