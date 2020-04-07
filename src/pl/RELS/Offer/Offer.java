@@ -43,7 +43,7 @@ public class Offer {
     }
 
     /** Enum Type that gives us values for most common types of floor levels in our offers.
-     * The namings should be self explanatory. Also added some int values functionality for ease of use.
+     * The namings should be self explanatory. Also added randomizer for extra functionality (getRandomFloor).
      */
     public enum FloorType{
         GROUND(0),
@@ -66,6 +66,7 @@ public class Offer {
             return this.value;
         }
 
+        //This syntax ensures that we dont have many instances of the Random class etc.
         private static final List<FloorType> VALUES =
                 Collections.unmodifiableList(Arrays.asList(values()));
         private static final int SIZE = VALUES.size();
