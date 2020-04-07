@@ -12,11 +12,22 @@ import java.util.Scanner;
  */
 public class Buyer extends User {
 
+    /** This is a constructor for Buyer class
+     *
+     * @param name - this is String name of the user
+     * @param surname - this is String surname of the user
+     * @param user - this is String username of the user
+     * @param pass - this is String not hashed user password
+     * @param bank - this is String bank id (credit card)
+     */
     public Buyer(String name, String surname, String user, String pass, String bank, Server s) {
         super(name, surname, user, pass, bank, s);
     }
 
-    //Overload the constructor /3/
+    /**
+     * Constructor that uses only one parameter - Server variable
+     * @param s - Server instance to which we want our user to be tied.
+     */
     public Buyer(Server s){
         super("Patryk", "Kowalski", "user2", "321", "987654321", s);
     }
@@ -61,7 +72,18 @@ public class Buyer extends User {
         buyer.showOffers();
     }
 
-    //more explanation in base class
+    /** This method is responsible for handling the login action of user (input operations too)
+     *
+     * <p>
+     *     In the beginning the passwords wont be hashed nor stored for simplicity. Although later on it will look
+     *     for the password in some files or database and might be hashed in the future. It doesnt need any parameters
+     * </p>
+     *
+     * @return the return of the function are giving us information what happened.
+     *          If the login went great we get 1
+     *          If there were invalid credentials given it will return 0
+     *          Otherwise (some problem other than invalid credentials) it will return -1
+     */
     @Override
     public int login() {
         System.out.println("Welcome to the login sequence of Buyer. You will be asked for your credentials.");
@@ -76,7 +98,12 @@ public class Buyer extends User {
             return 0;
     }
 
-    //more explanation in base class
+    /** This function will authenticate the user if valid credentials (username and password) are given
+     *
+     * @param username - username given by user trying to log in
+     * @param password - password given by user trying to log in
+     * @return true if there were good credentials given false otherwise
+     */
     @Override
     protected boolean authenticate(String username, String password) {
         if (this.getUsername().equals(username) && this.getPassword().equals(password))
@@ -86,7 +113,14 @@ public class Buyer extends User {
     }
 
 
-    //More explanation in abstract class
+    /** This is a function that takes control of the program for the time being (until the logout or until user dont want
+     *
+     *  to interact with it)
+     * @return -    returns -1 if it was failed login sequence
+     *              returns 0 if user decided to logout and continue with program
+     *              returns 1 if user decided to logout and quit the program
+     *              returns 2 if there was some error
+     */
     @Override
     public int actionLoop() {
         int t = this.login();
@@ -132,8 +166,11 @@ public class Buyer extends User {
         return 2;
     }
 
-    //Worth noting fact is that seller showOffers shows only offers created by you which is different to buyer showOffer
-    //method which presents all available offers
+    /** This method show all the offers to the user.
+     * Worth noting fact is that seller showOffers shows only offers created by you which is different to buyer showOffer
+     * method which presents all available offers
+     * Might be transported to application in the future. More of a handler of situation.
+     */
     @Override
     public void showOffers() {
         if (Buyer.server.getAllOffers() != null && !Buyer.server.getAllOffers().isEmpty()){
@@ -152,6 +189,10 @@ public class Buyer extends User {
         System.out.println("You bought an offer!");
     }
 
+    /**
+     * Very basic buy offer method to imitate the buyer's buy action by index in the array. Later it may use the ID instead.
+     * @param index - index at which the offer is stored in array
+     */
     public void buyOffer(int index){
         this.getServer().delOffer(this.getServer().getByIndex(index));
     }

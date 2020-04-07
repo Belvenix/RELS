@@ -65,6 +65,21 @@ public abstract class User {
      */
     protected abstract boolean authenticate(String username, String password);
 
+    /** This is a function that takes control of the program for the time being (until the logout or until user dont want
+     *
+     *  to interact with it)
+     * @return -    returns -1 if it was failed login sequence
+     *              returns 0 if user decided to logout and continue with program
+     *              returns 1 if user decided to logout and quit the program
+     *              returns 2 if there was some error
+     */
+    public abstract int actionLoop();
+
+    /** This method show all the offers to the user.
+     * Might be transported to application in the future. More of a handler of situation.
+     */
+    public abstract void showOffers();
+
     //--------------------------------------------------------------------------------------------
     //----------------------------------------SETTERS---------------------------------------------
     //--------------------------------------------------------------------------------------------
@@ -117,18 +132,5 @@ public abstract class User {
 
     public abstract long getUserId();
 
-    /** This is a function that takes control of the program for the time being (until the logout or until user dont want
-     *
-     *  to interact with it)
-     * @return -    returns -1 if it was failed login sequence
-     *              returns 0 if user decided to logout and continue with program
-     *              returns 1 if user decided to logout and quit the program
-     *              returns 2 if there was some error
-     */
-    public abstract int actionLoop();
 
-    /** This method show all the offers to the user.
-     * Might be transported to application in the future. More of a handler of situation.
-     */
-    public abstract void showOffers();
 }

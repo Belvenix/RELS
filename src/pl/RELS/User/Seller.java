@@ -126,6 +126,18 @@ public class Seller extends User implements Comparable<Seller>, Cloneable{
         return s;
     }
 
+    /** This method is responsible for handling the login action of user (input operations too)
+     *
+     * <p>
+     *     In the beginning the passwords wont be hashed nor stored for simplicity. Although later on it will look
+     *     for the password in some files or database and might be hashed in the future. It doesnt need any parameters
+     * </p>
+     *
+     * @return the return of the function are giving us information what happened.
+     *          If the login went great we get 1
+     *          If there were invalid credentials given it will return 0
+     *          Otherwise (some problem other than invalid credentials) it will return -1
+     */
     @Override
     public int login() {
         System.out.println("Welcome to the login sequence of Seller. You will be asked for your credentials.");
@@ -140,13 +152,25 @@ public class Seller extends User implements Comparable<Seller>, Cloneable{
             return 0;
     }
 
+    /** This function will authenticate the user if valid credentials (username and password) are given
+     *
+     * @param username - username given by user trying to log in
+     * @param password - password given by user trying to log in
+     * @return true if there were good credentials given false otherwise
+     */
     @Override
     protected boolean authenticate(String username, String password) {
         return this.getUsername().equals(username) && this.getPassword().equals(password);
     }
 
-    //Main loop of the seller class
-    //More explanation in abstract class
+    /** This is a function that takes control of the program for the time being (until the logout or until user dont want
+     *
+     *  to interact with it)
+     * @return -    returns -1 if it was failed login sequence
+     *              returns 0 if user decided to logout and continue with program
+     *              returns 1 if user decided to logout and quit the program
+     *              returns 2 if there was some error
+     */
     @Override
     public int actionLoop() {
         int t = this.login();
