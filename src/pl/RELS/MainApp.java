@@ -23,12 +23,25 @@ import static java.lang.Math.round;
  * end user. We may login put some offers and buy some offers
  * @author jbelter
  */
+//Multithreading is implemented in the Statistic Counter class which is invoked in main->runStatistics(). Also
+    //Critical section management is implemented there.
 public class MainApp {
 
     //Fields
-
+    /**
+     * This field holds a reference to our server instance
+     */
     protected static Server server;
+
+    /**
+     * This field holds our RANDOM class so that we have only one (saving memory)
+     */
     private static final Random RANDOM = new Random();
+
+    /**
+     * this variable if set to true will print ALL PROGRESS done in our runStatistics method. BEWARE - there will be
+     * a lot of printed lines so use only for debugging processes only.
+     */
     private static final boolean PRINT_PROGRESS = false;
 
     public MainApp(){
@@ -40,9 +53,11 @@ public class MainApp {
     public static void main(String[] args) {
         MainApp platform = new MainApp();
         platform.runStatistics();
-
     }
 
+    /**
+     * Method responsible for running user interface
+     */
     public void runMain(){
         Scanner scan = new Scanner(System.in); // Initialize a new scanner object
         while (true){
@@ -95,6 +110,20 @@ public class MainApp {
         }
     }
 
+    /**
+     * Method responsible for showing example multithread processing of our offers from our server.
+     *
+     * First it will print:
+     * "The goal of this program is to show the efficiency of teaching a simple Linear Regression
+     * Model nad spreading it across the threads. On each of the threads we will have a dataset that consists
+     * of (size of database) / (number of threads) and will try to predict the value of the house using this
+     * formula: 'y_hat = slope * surface + intercept', where slope and intercept are calculated using the LR.
+     * To enhance the model we will be using nThread part model that will average it's model over all predictions.
+     * Also in order to represent the critical section access we will have a variable that will increment every
+     * time it sees an outlier. In the end we will print the value of the outlier count."
+     *
+     * Which pretty much explains what the method does.
+     */
     public void runStatistics(){
         System.out.println("The goal of this program is to show the efficiency of teaching a simple Linear Regression\n" +
                 " Model nad spreading it across the threads. On each of the threads we will have a dataset that consists\n" +
@@ -103,38 +132,66 @@ public class MainApp {
                 " To enhance the model we will be using nThread part model that will average it's model over all predictions.\n" +
                 " Also in order to represent the critical section access we will have a variable that will increment every\n" +
                 " time it sees an outlier. In the end we will print the value of the outlier count.");
+        //We create needed variables.
         HashMap<String, ArrayList<String>> adrHashMap = setupAddressHashMap();
         OfferGenerator generator = new OfferGenerator(adrHashMap);
+
+        //The number is just big for the purpose of the exercise
         int nOffers = 5000000;
-        ArrayList<Long> learnTime = new ArrayList<>();
-        ArrayList<Long> errorTime = new ArrayList<>();
+
+
+
         Seller s = new Seller(server);
         System.out.println("Creating a list of " + nOffers + " offers and uploading them to server.");
         long start = System.currentTimeMillis();
+
+        //Here we generate our offers and upload them to the system (one user uploads them)
         for (int i = 0; i < nOffers; i++) {
             Offer o = generator.offerGenerator(s);
             s.uploadOffer(o);
         }
+        //After it is uploaded we start the real work.
+
         long duration = System.currentTimeMillis() - start;
         System.out.println("Finished creating a list of offers in " + duration + "ms.");
-        for (int i = 1; i <= 5; i++) {
+        //First loop is responsible for handling how many threads we will use for the iteration
+        for (int i = 1; i <= 10 ; i++) {
+
+            //How many outliers are there in the dataset (price is too big compared to the surface)
             int outliersCount = 0;
+            //Lists are responsible for holding the processing time so that after x iterations of the same code we would have
+            //Average processing time (since there might be outliers ie skype push notification etc.
+            ArrayList<Long> learnTime = new ArrayList<>();
+            ArrayList<Long> errorTime = new ArrayList<>();
+
+            //Second loop is responsible for handling the process j times so that we get an average oh how much time it takes
+            //to process it
             for (int j = 0; j < 10; j++){
                 long startLearn = System.currentTimeMillis();
+
+                //A class responsible for all of the calculation
                 StatisticCounter sc = new StatisticCounter(i);
+
+                //here we teach our Linear Regression models with the data
                 sc.learn();
                 long durationLearn = System.currentTimeMillis() - startLearn;
+                //here we add the time of execution of learning
                 learnTime.add(durationLearn);
 
 
                 long startMEA = System.currentTimeMillis();
+
+                //Here we calculate the error of the method (which output is enabled only with PRINT_PROGRESS
                 sc.MAE();
                 long durationMAE = System.currentTimeMillis() - startMEA;
                 errorTime.add(durationMAE);
                 if(j == 0){
+                    //we just get value from one model (it doesnt matter which one since it is the same for all of them)
                     outliersCount = sc.getOutlierCount();
                 }
             }
+
+            //Now we just sum the times and average the values so we can see the real average time of executiion of our method.
             Double averageLearn = learnTime.stream().mapToDouble(val -> val).average().orElse(0.0);
             System.out.println("Iteration " + i + ", statistic learning process finished in " + averageLearn + "ms.");
             Double averageMAE = errorTime.stream().mapToDouble(val -> val).average().orElse(0.0);
@@ -146,6 +203,11 @@ public class MainApp {
 
     }
 
+    /**
+     * This method returns a setup address HashMap which is needed for address generation in Offer generation.
+     *
+     * @return - a hashmap that contains mapped values of countries, states, cities, streets, building # and apartment #
+     */
     public HashMap<String, ArrayList<String>> setupAddressHashMap(){
         ArrayList<String> possibleCountries = new ArrayList<>(Arrays.asList("Poland", "Germany", "France"));
         ArrayList<String> possibleStates = new ArrayList<>(Arrays.asList("pomeranian", "masovian", "lesser poland", "#!%", "berlin",
@@ -173,21 +235,52 @@ public class MainApp {
 
     //----------------------------------------THREADS---------------------------------------------
 
-
+    /**
+     * Class responsible for handling multithreaded process of linear regression analysis of relation surface to price in
+     * offers. There is one model per thread This class implements multithreading as stated in exercise.
+     *
+     */
     class StatisticCounter{
+
+        /**
+         * An arraylist of model handlers which we will be teaching. worth noting is the fact that the size of the list
+         * scales with nThreads variable which increases both number of threads and number of models
+         */
         private ArrayList<ModelHandler> models;
-        private int outlierCount, outlierCountNoSync;
+
+        /**
+         * custom varibalbe responsible for having the data abou the outliers (needed to show the synchronized access to
+         * the variable)
+         */
+        private int outlierCount;
+
+        /**
+         * number of threads that we will be using
+         */
         private int nThreads;
+
+        /**
+         * the value that we will consider to be an outlier if an error is bigger that this.
+         */
         private double outlierRange;
 
+        /**
+         * Simple constructor of the class
+         * @param nThreads - number of threads to be used
+         */
         public StatisticCounter(int nThreads){
             this.nThreads = nThreads;
             this.models = new ArrayList<ModelHandler>();
             this.outlierCount = 0;
-            this.outlierCountNoSync = 0;
             this.outlierRange = this.getOutlier();
         }
 
+        /**
+         * Function creates and submits the model to Executor Service as well as to models list
+         * @param j - the first index of the sublist in relation to original list (inclusive)
+         * @param nextj the last index of the sublist in relation to original list (exclusive)
+         * @param es - Executor Service instance that we submit the work to.
+         */
         private void addModel(int j, int nextj, ExecutorService es){
             ArrayList<Offer> split = new ArrayList<Offer>(server.getAllOffers().subList(j, nextj));
             ModelHandler m = new ModelHandler(split);
@@ -195,12 +288,23 @@ public class MainApp {
             es.submit(m);
         }
 
+        /**
+         * Function is responsible for learning process of Linear Regression models. All of them happen to learn in
+         * multiple threads, based on the number of them (nThreads)
+         *
+         * It creates n Threads which will learn from the sublist which are more or less evenly distributed among them.
+         * Here is the exercise mostly implemented.
+         */
         public void learn() {
             if (PRINT_PROGRESS)
                 System.out.println("Starting the StatisticCounter instance with " + nThreads + " threads-models.");
+
+            //A pool of threads. this will handle multiple threads automatically.
             ExecutorService executorService = Executors.newFixedThreadPool(nThreads);
             int maxSize = server.getAllOffers().size();
             int batchSize = (maxSize / nThreads);
+
+            //The loop ensures that the list is evenly divided as well as no values are excluded
             for (int j = 0, nextj = batchSize; j <= maxSize; j += batchSize, nextj += batchSize){
                 if (nextj > maxSize){
                     nextj = maxSize;
@@ -214,8 +318,11 @@ public class MainApp {
                     addModel(j, nextj, executorService);
                 }
             }
+
+            //Now we shutdown the threads - which are still running! hence we wait with the try catch clause
             executorService.shutdown();
             try {
+                //Now we wait for the termination up to 60 seconds
                 executorService.awaitTermination(60, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 executorService.shutdownNow();
@@ -223,20 +330,34 @@ public class MainApp {
 
         }
 
+        /**
+         * Wrapper function with optional print (based on the value of PRINT_PROGRESS).
+         */
         public void MAE(){
             double error = calculateMAE();
             if (PRINT_PROGRESS)
                 System.out.println("MAE value is " + error + " with " + nThreads + " thread-models.");
         }
 
+        /**
+         * Synchronized incrementation of the outlier count. Adds one to the value
+         */
         private synchronized void synchronizedIncrement(){
             this.outlierCount += 1;
         }
 
+        /**
+         * Simple getter of outlier count field
+         * @return - int outlierCount
+         */
         public int getOutlierCount(){
             return outlierCount;
         }
 
+        /**
+         * Method calculates the Mean Absolute Error of the predictions of the model compared to the real value
+         * @return MAE double
+         */
         private double calculateMAE(){
             double sum = 0;
             if (PRINT_PROGRESS)
@@ -256,10 +377,18 @@ public class MainApp {
             return sum;
         }
 
+        /**
+         * simple outlier range getter. DIFFERENT than getOutlierCount
+         * @return
+         */
         public double getOutlierRange(){
             return this.outlierRange;
         }
 
+        /**
+         * Calculates the value of outlier range - value which we consider to be a significant error and we have to report it
+         * @return - outlier range double
+         */
         private double getOutlier(){
             double sum = 0.0,  std = 0.0, xx = 0.0;
             int n = server.getAllOffers().size();
@@ -274,6 +403,11 @@ public class MainApp {
             return 2 * std;
         }
 
+        /**
+         * Method that predicts the price based on area using the mean output of all of the models.
+         * @param area - 'x' variable that we use to predict the 'y' variable (price)
+         * @return - predicted value of price
+         */
         private double meanPredict(double area){
             double sum = 0;
             for (ModelHandler m : models){
@@ -285,6 +419,9 @@ public class MainApp {
 
     }
 
+    /**
+     * Simple Class responsible for handling the Linear Regression model
+     */
     class ModelHandler implements Runnable{
         LinearRegression model;
         ArrayList<Offer> data;
@@ -293,6 +430,12 @@ public class MainApp {
             this.data = offArr;
         }
 
+        /**
+         * Function need to be an overriden run method because it will run in the thread - therefore it implements the
+         * Runnable interface which will call the function after Thread.start() will be called (which is called internally
+         * by thread pool). Here are model is being trained.
+         * There are optional prints provided for the user.
+         */
         @Override
         public void run() {
             if (PRINT_PROGRESS)
@@ -304,6 +447,11 @@ public class MainApp {
                 System.out.println("Linear regressor " + Thread.currentThread().getName() + " has been calculated in " + duration + "ms");
         }
 
+        /**
+         * Helper class that gets all of the surfaces from the data
+         * @param offArr - an arraylist of Offer objects which contain the surfaces field which is then being returned
+         * @return - an array(primitive) of doubles of surfaces need for the Linear model
+         */
         private double [] getAreas(ArrayList<Offer> offArr){
             double [] ret = new double[offArr.size()];
             int i = 0;
@@ -313,6 +461,11 @@ public class MainApp {
             return ret;
         }
 
+        /**
+         * Helper class that gets all of the Price from the data
+         * @param offArr - an arraylist of Offer objects which contain the Price field which is then being returned
+         * @return - an array(primitive) of doubles of Price need for the Linear model
+         */
         private double [] getPrices(ArrayList<Offer> offArr){
             double [] ret = new double[offArr.size()];
             int i = 0;
@@ -322,10 +475,18 @@ public class MainApp {
             return ret;
         }
 
+        /**
+         * Simple predict method wrapper
+         * @param area - x variable that we use to predict the y (price)
+         * @return - predicted price
+         */
         public double predict(double area){
             return model.predict(area);
         }
 
+        /**
+         * not used wrapper for the show method
+         */
         public void showModel(){
             System.out.println(model.toString());
         }
