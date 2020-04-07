@@ -34,7 +34,6 @@ public class OfferGenerator {
             Timestamp tsExpiration = getFortNight(tsIssue);
             String a = genAdr.get(0);
             double surface = RANDOM.nextDouble() * maxSurface + minSurface;
-            double p = surface * RANDOM.nextDouble() * 0.3 + (minPrice + RANDOM.nextDouble() * ERROR);
             Offer.OfferType ot = Offer.OfferType.getRandomType();
             long oID = seller.getServer().getCurrentOfferId();
             long sID = seller.getUserId();
@@ -42,6 +41,13 @@ public class OfferGenerator {
             boolean furnished = RANDOM.nextBoolean();
             double rooms = (double) (RANDOM.nextInt(((int) maxRooms - (int) minRooms)) + minRooms);
             String desc = "Lorem ipsum dolor sit amet";
+            double p = 0.0;
+            if (RANDOM.nextDouble() < 0.0001){
+                p = surface * RANDOM.nextDouble() * 0.3 + (minPrice + RANDOM.nextDouble() * ERROR) * (RANDOM.nextDouble() * 100);
+            }
+            else {
+                p = surface * RANDOM.nextDouble() * 0.3 + (minPrice + RANDOM.nextDouble() * ERROR);
+            }
 
             Offer o = new Offer(tsIssue, tsExpiration, a, p, ot, oID, sID, ft, furnished, surface, rooms, desc);
             return o;

@@ -1,5 +1,6 @@
 package pl.RELS;
 import org.jetbrains.annotations.NotNull;
+import pl.RELS.MultiThreadding.LinearRegression;
 import pl.RELS.Offer.Offer;
 import pl.RELS.Offer.OfferGenerator;
 import pl.RELS.User.Buyer;
@@ -28,6 +29,7 @@ public class MainApp {
 
     protected static Server server;
     private static final Random RANDOM = new Random();
+    private static final boolean PRINT_PROGRESS = false;
 
     public MainApp(){
         server = new Server();
@@ -94,38 +96,51 @@ public class MainApp {
     }
 
     public void runStatistics(){
+        System.out.println("The goal of this program is to show the efficiency of teaching a simple Linear Regression\n" +
+                " Model nad spreading it across the threads. On each of the threads we will have a dataset that consists\n" +
+                " of (size of database) / (number of threads) and will try to predict the value of the house using this\n" +
+                " formula: 'y_hat = slope * surface + intercept', where slope and intercept are calculated using the LR.\n"+
+                " To enhance the model we will be using nThread part model that will average it's model over all predictions.\n" +
+                " Also in order to represent the critical section access we will have a variable that will increment every\n" +
+                " time it sees an outlier. In the end we will print the value of the outlier count.");
         HashMap<String, ArrayList<String>> adrHashMap = setupAddressHashMap();
         OfferGenerator generator = new OfferGenerator(adrHashMap);
-        int nOffers = 6000000;
-        double threshold = 5000;
+        int nOffers = 5000000;
+        ArrayList<Long> learnTime = new ArrayList<>();
+        ArrayList<Long> errorTime = new ArrayList<>();
         Seller s = new Seller(server);
+        System.out.println("Creating a list of " + nOffers + " offers and uploading them to server.");
+        long start = System.currentTimeMillis();
         for (int i = 0; i < nOffers; i++) {
             Offer o = generator.offerGenerator(s);
             s.uploadOffer(o);
         }
+        long duration = System.currentTimeMillis() - start;
+        System.out.println("Finished creating a list of offers in " + duration + "ms.");
+        for (int i = 1; i <= 5; i++) {
+            int outliersCount = 0;
+            for (int j = 0; j < 10; j++){
+                long startLearn = System.currentTimeMillis();
+                StatisticCounter sc = new StatisticCounter(i);
+                sc.learn();
+                long durationLearn = System.currentTimeMillis() - startLearn;
+                learnTime.add(durationLearn);
 
-        for (int i = 1; i <= 10; i++) {
-            ExecutorService executorService = Executors.newFixedThreadPool(i);
-            ArrayList<Offer> goodOffers = new ArrayList<>();
-            long start = System.currentTimeMillis();
-            int batchSize = (server.getAllOffers().size() / i);
-            for (int j = 0, nextj = batchSize; j <= server.getAllOffers().size() && nextj <= server.getAllOffers().size();
-                 j += batchSize, nextj += batchSize){
-                ArrayList<Offer> split = new ArrayList<Offer>(server.getAllOffers().subList(j, nextj));
-                executorService.submit(new Thread(new StatisticCounter(split, goodOffers, 5000)));
-            }
-            executorService.shutdown();
-            try {
-                executorService.awaitTermination(60, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                executorService.shutdownNow();
-            }
-            long duration = System.currentTimeMillis() - start;
-            System.out.println("Final mean price is equal to: " + synSum.getSumPrice() / nOffers +
-                                "\nFinal mean surface is equal to:" + synSum.getSumArea() / nOffers +
-                                "\nFinal percent of good offers: " + ((double)synSum.getGoodOffers().size() / (double)nOffers)*100
-                    + "%\nTotal process time: " + duration + "ms\n" + "Best offer price offer: " + synSum.goodOffers.get(0).toString());
 
+                long startMEA = System.currentTimeMillis();
+                sc.MAE();
+                long durationMAE = System.currentTimeMillis() - startMEA;
+                errorTime.add(durationMAE);
+                if(j == 0){
+                    outliersCount = sc.getOutlierCount();
+                }
+            }
+            Double averageLearn = learnTime.stream().mapToDouble(val -> val).average().orElse(0.0);
+            System.out.println("Iteration " + i + ", statistic learning process finished in " + averageLearn + "ms.");
+            Double averageMAE = errorTime.stream().mapToDouble(val -> val).average().orElse(0.0);
+            System.out.println("Iteration " + i + ", statistic error calculation finished in " + averageMAE + "ms.");
+            System.out.println("Iteration " + i + ", outlier count (sync) is equal to: " + outliersCount);
+            System.out.print("\n---------------------------------------------------------------\n\n");
 
         }
 
@@ -159,39 +174,160 @@ public class MainApp {
     //----------------------------------------THREADS---------------------------------------------
 
 
-    class StatisticCounter implements Runnable{
-        private volatile double sumPrice = 0, sumArea = 0;
-        private volatile ArrayList<Offer> goodOffers;
-        private final ArrayList<Offer> list;
-        private double threshold;
+    class StatisticCounter{
+        private ArrayList<ModelHandler> models;
+        private int outlierCount, outlierCountNoSync;
+        private int nThreads;
+        private double outlierRange;
 
-        StatisticCounter(ArrayList<Offer> list, ArrayList<Offer> goodOffers, double threshold){
-            this.goodOffers = goodOffers;
-            this.list = list;
-            this.threshold = threshold;
+        public StatisticCounter(int nThreads){
+            this.nThreads = nThreads;
+            this.models = new ArrayList<ModelHandler>();
+            this.outlierCount = 0;
+            this.outlierCountNoSync = 0;
+            this.outlierRange = this.getOutlier();
+        }
+
+        private void addModel(int j, int nextj, ExecutorService es){
+            ArrayList<Offer> split = new ArrayList<Offer>(server.getAllOffers().subList(j, nextj));
+            ModelHandler m = new ModelHandler(split);
+            this.models.add(m);
+            es.submit(m);
+        }
+
+        public void learn() {
+            if (PRINT_PROGRESS)
+                System.out.println("Starting the StatisticCounter instance with " + nThreads + " threads-models.");
+            ExecutorService executorService = Executors.newFixedThreadPool(nThreads);
+            int maxSize = server.getAllOffers().size();
+            int batchSize = (maxSize / nThreads);
+            for (int j = 0, nextj = batchSize; j <= maxSize; j += batchSize, nextj += batchSize){
+                if (nextj > maxSize){
+                    nextj = maxSize;
+                }
+                else if(nextj + batchSize > maxSize){
+                    nextj = maxSize;
+                    addModel(j, nextj, executorService);
+                    break;
+                }
+                else{
+                    addModel(j, nextj, executorService);
+                }
+            }
+            executorService.shutdown();
+            try {
+                executorService.awaitTermination(60, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
+            }
+
+        }
+
+        public void MAE(){
+            double error = calculateMAE();
+            if (PRINT_PROGRESS)
+                System.out.println("MAE value is " + error + " with " + nThreads + " thread-models.");
+        }
+
+        private synchronized void synchronizedIncrement(){
+            this.outlierCount += 1;
+        }
+
+        public int getOutlierCount(){
+            return outlierCount;
+        }
+
+        private double calculateMAE(){
+            double sum = 0;
+            if (PRINT_PROGRESS)
+                System.out.println("Started calculation of MAE");
+            ArrayList<Offer> allOff = server.getAllOffers();
+            for (int i = 0; i < allOff.size(); i++){
+                Offer o = allOff.get(i);
+                double error = Math.abs(meanPredict(o.getSurface()) - o.getPrice());
+                if (error > this.getOutlierRange()){
+                    this.synchronizedIncrement();
+                }
+                sum += error;
+            }
+            sum /= server.getAllOffers().size();
+            if (PRINT_PROGRESS)
+                System.out.println("MAE has been calculated.");
+            return sum;
+        }
+
+        public double getOutlierRange(){
+            return this.outlierRange;
+        }
+
+        private double getOutlier(){
+            double sum = 0.0,  std = 0.0, xx = 0.0;
+            int n = server.getAllOffers().size();
+            for(Offer o : server.getAllOffers()){
+                sum += o.getSurface();
+            }
+            double mean = sum / n;
+            for(Offer o : server.getAllOffers()){
+                xx += (o.getPrice() - mean) * (o.getPrice() - mean);
+            }
+            std = Math.sqrt(xx / (n-1));
+            return 2 * std;
+        }
+
+        private double meanPredict(double area){
+            double sum = 0;
+            for (ModelHandler m : models){
+                sum += m.predict(area);
+            }
+            sum /= nThreads;
+            return sum;
+        }
+
+    }
+
+    class ModelHandler implements Runnable{
+        LinearRegression model;
+        ArrayList<Offer> data;
+
+        public ModelHandler (ArrayList<Offer> offArr){
+            this.data = offArr;
         }
 
         @Override
         public void run() {
-            for (Offer o : this.list) {
-                sumPrice += o.getPrice();
-                sumArea += o.getSurface();
-                double ratio = o.getPrice() / o.getSurface();
-                if (ratio < threshold) {
-                    goodOffers.add(o);
-                }
+            if (PRINT_PROGRESS)
+                System.out.println("Starting the calculation of linear regressor coefficients in " + Thread.currentThread().getName());
+            long start = System.currentTimeMillis();
+            this.model = new LinearRegression(getAreas(data), getPrices(data));
+            long duration = System.currentTimeMillis() - start;
+            if (PRINT_PROGRESS)
+                System.out.println("Linear regressor " + Thread.currentThread().getName() + " has been calculated in " + duration + "ms");
+        }
+
+        private double [] getAreas(ArrayList<Offer> offArr){
+            double [] ret = new double[offArr.size()];
+            int i = 0;
+            for (Offer o : offArr){
+                ret[i++] = o.getPrice();
             }
-        }
-        public double getSumPrice() {
-            return sumPrice;
+            return ret;
         }
 
-        public double getSumArea() {
-            return sumArea;
+        private double [] getPrices(ArrayList<Offer> offArr){
+            double [] ret = new double[offArr.size()];
+            int i = 0;
+            for (Offer o : offArr){
+                ret[i++] = o.getSurface();
+            }
+            return ret;
         }
 
-        public ArrayList<Offer> getGoodOffers(){
-            return goodOffers;
+        public double predict(double area){
+            return model.predict(area);
+        }
+
+        public void showModel(){
+            System.out.println(model.toString());
         }
     }
 

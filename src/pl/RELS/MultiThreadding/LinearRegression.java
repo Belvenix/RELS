@@ -14,7 +14,7 @@ package pl.RELS.MultiThreadding;
  *  @author Robert Sedgewick
  *  @author Kevin Wayne
  */
-public class LinearRegression {
+public class LinearRegression{
     private final double intercept, slope;
     private final double r2;
     private final double svar0, svar1;
@@ -42,6 +42,8 @@ public class LinearRegression {
         double xbar = sumx / n;
         double ybar = sumy / n;
 
+        double std = 0.0;
+
         // second pass: compute summary statistics
         double xxbar = 0.0, yybar = 0.0, xybar = 0.0;
         for (int i = 0; i < n; i++) {
@@ -49,6 +51,7 @@ public class LinearRegression {
             yybar += (y[i] - ybar) * (y[i] - ybar);
             xybar += (x[i] - xbar) * (y[i] - ybar);
         }
+
         slope  = xybar / xxbar;
         intercept = ybar - slope * xbar;
 
