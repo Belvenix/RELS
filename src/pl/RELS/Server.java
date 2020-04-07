@@ -32,8 +32,6 @@ public class Server {
         this.currentUserId = 1;
     }
 
-
-
     /** This is a function of mainApp that handles how to add an offer to the system. It increments currentOfferId as well
      *
      * @param o - this is properly initialized Offer object to be added to the list.
