@@ -11,7 +11,7 @@ public class Server {
 
     /** allOffers variable for now is having all of the offers inside the system.
      */
-    protected volatile ArrayList<Offer> allOffers;
+    protected ArrayList<Offer> allOffers;
     /** currentOfferId field has current offer id. It will increment per one added offer.
      */
     protected long currentOfferId;
@@ -40,7 +40,7 @@ public class Server {
      * @return - returns 1 if everything went great,
      *           returns -1 if something went wrong
      */
-    synchronized public int addOffer(Offer o){
+    public int addOffer(Offer o){
         if (o != null) {
             o.setOfferId(currentOfferId++);
             currentOfferId += 1;
@@ -52,11 +52,6 @@ public class Server {
         }
     }
 
-    public void resetData(){
-        this.allOffers = new ArrayList<>();
-        this.currentUserId = 1;
-        this.currentOfferId = 1;
-    }
 
     /** This is a simple function that deletes a certain offer object from the list after the buyer buys it.
      * This method DOES NOT decrement current offer id since it is not 100% the last element
@@ -64,7 +59,7 @@ public class Server {
      * @return - returns 1 if it deletes the object.
      *           returns -1 if something goes wrong.
      */
-    synchronized public int delOffer(Offer o){
+    public int delOffer(Offer o){
         if (o != null){
             this.getAllOffers().remove(o);
             return 1;
@@ -75,20 +70,21 @@ public class Server {
         }
     }
 
-    public void setAllOffers(ArrayList<Offer> offers){
-        if(offers != null)
-            this.allOffers = offers;
-    }
-
     /**
      * This function returns current offer id and DOESN'T add one to the value. It is changed in addOffer
      * @return - returns current offer id
      */
-    synchronized public long getCurrentOfferId(){
+    public long getCurrentOfferId(){
         return this.currentOfferId;
     }
 
-    synchronized public Offer getByIndex(int id){
+
+    /**
+     * Method for getting the offer using it's index.
+     * @param id - integer index in the list
+     * @return Offer object at index specified
+     */
+    public Offer getByIndex(int id){
         if (id < this.getAllOffers().size())
             return this.getAllOffers().get(id);
         else{
@@ -102,13 +98,13 @@ public class Server {
      * This function returns current user Id, then adds one to it.
      * @return - returns current user id
      */
-    synchronized public long currentUserId(){
+    public long currentUserId(){
         long ret = this.currentUserId;
         this.currentUserId += 1;
         return ret;
     }
 
-    synchronized public ArrayList<Offer> getAllOffers() {
+    public ArrayList<Offer> getAllOffers() {
         return allOffers;
     }
 

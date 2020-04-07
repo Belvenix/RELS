@@ -126,7 +126,8 @@ public class OfferGenerator {
      * Function returns an array of strings that imitates the address with this format
      * "country;state;city;street;buildingNumber;apartmentNumber"
      *
-     * If we want to get only one address we specify n to be 1.
+     * If we want to get only one address we specify n to be 1. Originally the code was meant to create an array since,
+     *  multithreadding task would be a validation of the addresses which I after some while decided not to use.
      *
      * @param n - number of addresses to be generated
      * @param countries - an arraylist of possible values for the country variable (Poland, Germany, France etc.)
