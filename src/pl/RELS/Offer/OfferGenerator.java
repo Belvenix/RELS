@@ -10,7 +10,7 @@ import java.util.Random;
 
 public class OfferGenerator {
 
-    static final Random RANDOM = new Random();
+    static final Random RANDOM = new Random(42);
     HashMap<String, ArrayList<String>> pA;
     double minPrice, ratio, minSurface, maxSurface, minRooms, maxRooms;
     final double ERROR = 100000;
