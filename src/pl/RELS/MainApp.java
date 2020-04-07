@@ -1,10 +1,21 @@
 package pl.RELS;
+import org.jetbrains.annotations.NotNull;
 import pl.RELS.Offer.Offer;
+import pl.RELS.Offer.OfferGenerator;
 import pl.RELS.User.Buyer;
 import pl.RELS.User.Seller;
 import pl.RELS.User.User;
 
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static java.lang.Math.round;
 
 /** This class represents our Real Estate Listing System application
  * It contains a Server class to handle the storage of the offers as well as a main function that works like an app for
@@ -16,6 +27,7 @@ public class MainApp {
     //Fields
 
     protected static Server server;
+    private static final Random RANDOM = new Random();
 
     public MainApp(){
         server = new Server();
@@ -25,7 +37,8 @@ public class MainApp {
 
     public static void main(String[] args) {
         MainApp platform = new MainApp();
-        platform.runMain();
+        platform.runStatistics();
+
     }
 
     public void runMain(){
@@ -80,92 +93,105 @@ public class MainApp {
         }
     }
 
-    public void runTest(){
+    public void runStatistics(){
+        HashMap<String, ArrayList<String>> adrHashMap = setupAddressHashMap();
+        OfferGenerator generator = new OfferGenerator(adrHashMap);
+        int nOffers = 6000000;
+        double threshold = 5000;
+        Seller s = new Seller(server);
+        for (int i = 0; i < nOffers; i++) {
+            Offer o = generator.offerGenerator(s);
+            s.uploadOffer(o);
+        }
 
+        for (int i = 1; i <= 10; i++) {
+            ExecutorService executorService = Executors.newFixedThreadPool(i);
+            ArrayList<Offer> goodOffers = new ArrayList<>();
+            long start = System.currentTimeMillis();
+            int batchSize = (server.getAllOffers().size() / i);
+            for (int j = 0, nextj = batchSize; j <= server.getAllOffers().size() && nextj <= server.getAllOffers().size();
+                 j += batchSize, nextj += batchSize){
+                ArrayList<Offer> split = new ArrayList<Offer>(server.getAllOffers().subList(j, nextj));
+                executorService.submit(new Thread(new StatisticCounter(split, goodOffers, 5000)));
+            }
+            executorService.shutdown();
+            try {
+                executorService.awaitTermination(60, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
+            }
+            long duration = System.currentTimeMillis() - start;
+            System.out.println("Final mean price is equal to: " + synSum.getSumPrice() / nOffers +
+                                "\nFinal mean surface is equal to:" + synSum.getSumArea() / nOffers +
+                                "\nFinal percent of good offers: " + ((double)synSum.getGoodOffers().size() / (double)nOffers)*100
+                    + "%\nTotal process time: " + duration + "ms\n" + "Best offer price offer: " + synSum.goodOffers.get(0).toString());
+
+
+        }
+
+    }
+
+    public HashMap<String, ArrayList<String>> setupAddressHashMap(){
+        ArrayList<String> possibleCountries = new ArrayList<>(Arrays.asList("Poland", "Germany", "France"));
+        ArrayList<String> possibleStates = new ArrayList<>(Arrays.asList("pomeranian", "masovian", "lesser poland", "#!%", "berlin",
+                "hamburg", "bavaria", "ile-de-france", "alpes-cote-d'Azur",
+                "auvergne-rhone-alpes"));
+        ArrayList<String> possibleCities = new ArrayList<>(Arrays.asList("Gdansk", "Warsaw", "Cracow", "Berlin", "Hamburg", "Monachium",
+                "Paris", "Marseille", "Lyon", "New York"));
+        ArrayList<String> possibleStreets = new ArrayList<>(Arrays.asList("Lwowa", "Pooh", "kurzgesagt", "zolipapa", "ambasadors",
+                "Cute", "Unlucky"));
+        ArrayList<String> possibleBuildingNumbers = new ArrayList<>(Arrays.asList("1", "2", "3", "4", "5", "6b", "7a", "94",
+                "14c", "30c", "18", "19", "11", "45b", "29a", "29b", "30", "80",
+                "9", "11", "13b", "12a"));
+        ArrayList<String> possibleApartmentNumbers = new ArrayList<>(Arrays.asList("1", "2", "3", "4", "5", "6", "7a", "94",
+                "14c", "30c", "18", "19", "11", "45b", "29a", "29b", "30", "80", "9", "11", "13b", "12a", "13", "14", "15",
+                "16", "17", "20"));
+        HashMap<String, ArrayList<String>> hshMap = new HashMap<String,ArrayList<String>>();
+        hshMap.put("countries", possibleCountries);
+        hshMap.put("states", possibleStates);
+        hshMap.put("cities", possibleCities);
+        hshMap.put("streets", possibleStreets);
+        hshMap.put("buildingNumbers", possibleBuildingNumbers);
+        hshMap.put("apartmentNumbers", possibleApartmentNumbers);
+        return hshMap;
     }
 
     //----------------------------------------THREADS---------------------------------------------
 
-    //Proper address format
-    //Country;State;City;Street;BuildingNumber;ApartmentNumber
 
+    class StatisticCounter implements Runnable{
+        private volatile double sumPrice = 0, sumArea = 0;
+        private volatile ArrayList<Offer> goodOffers;
+        private final ArrayList<Offer> list;
+        private double threshold;
 
-    class Validator implements Runnable{
-
-        Thread myThread;
-        Server s;
-        HashSet<String> validCountries;
-        HashSet<String> validCities;
-        long validAddresses = 0;
-        long invalidAddresses = 0;
-
-        Validator(Server s){
-            myThread = new Thread(this, "Address validator");
-            this.s = s;
-            validCountries = new HashSet<>(Arrays.asList("Poland", "Germany", "France"));
-            validCities = new HashSet<>(Arrays.asList("Gdansk", "Warsaw", "Cracow", "Berlin", "Hamburg", "Monachium",
-                    "Paris", "Marseilles", "Lyon"));
-            System.out.println("Thread for address validation has been created" + myThread);
-            myThread.start();
+        StatisticCounter(ArrayList<Offer> list, ArrayList<Offer> goodOffers, double threshold){
+            this.goodOffers = goodOffers;
+            this.list = list;
+            this.threshold = threshold;
         }
 
         @Override
-        public void run(){
-            ArrayList<Offer> offArr = this.s.getAllOffers();
-            for (Offer o : offArr){
-                if(checkAddress(o.getAddress(), validCountries, validCities)){
-                    validAddresses += 1;
-                }
-                else {
-                    invalidAddresses += 1;
+        public void run() {
+            for (Offer o : this.list) {
+                sumPrice += o.getPrice();
+                sumArea += o.getSurface();
+                double ratio = o.getPrice() / o.getSurface();
+                if (ratio < threshold) {
+                    goodOffers.add(o);
                 }
             }
         }
-
-        /** This function check the validity of our String address.
-         *
-         * @param address - String to be parsed and checked for validity
-         * @param validCountries - A String HashSet that contains a list of valid countries
-         * @param validCities - A String HashSet that contains a list of valid cities
-         * @return - returns true if the address is valid, false otherwise
-         */
-        private boolean checkAddress(String address, HashSet<String> validCountries, HashSet<String> validCities){
-            String[] s = address.split(";");
-            if (s.length == 6){
-                return validCountries.contains(s[0]) && validCities.contains(s[1]) &&
-                        isInt(s[5]);
-            }
-            return false;
+        public double getSumPrice() {
+            return sumPrice;
         }
 
-        /** This function checks whether the argument is a valid String, however it does not check whether int might be no large
-         * to be stored inside int
-         *
-         * @param str - String to be tested
-         * @return return true if the String is an integer, false otherwise
-         */
-        public boolean isInt(String str) {
-            if (str == null) {
-                return false;
-            }
-            int length = str.length();
-            if (length == 0) {
-                return false;
-            }
-            int i = 0;
-            if (str.charAt(0) == '-') {
-                if (length == 1) {
-                    return false;
-                }
-                i = 1;
-            }
-            for (; i < length; i++) {
-                char c = str.charAt(i);
-                if (c <= '/' || c >= ':') {
-                    return false;
-                }
-            }
-            return true;
+        public double getSumArea() {
+            return sumArea;
+        }
+
+        public ArrayList<Offer> getGoodOffers(){
+            return goodOffers;
         }
     }
 

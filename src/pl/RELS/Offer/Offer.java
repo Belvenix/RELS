@@ -4,9 +4,7 @@ import pl.RELS.Server;
 import pl.RELS.User.Seller;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.*;
 
 // Comparators /2/
 
@@ -16,6 +14,8 @@ import java.util.Comparator;
  */
 public class Offer {
 
+
+
     /** Enum Type that gives us values for most common types of offers we will have in our system.
      * In the future we may change it so we will check them via instanceof() syntax
      */
@@ -24,13 +24,21 @@ public class Offer {
         RENT(1),
         LONG_TERM_RENT(2),
         SHORT_TERM_RENT(3),
-        NONE(4);
+        NONE(-1);
         private int value;
-        private OfferType(int value){
+        OfferType(int value){
             this.value = value;
         }
         public int getValue(){
             return this.value;
+        }
+        private static final List<OfferType> VALUES =
+                Collections.unmodifiableList(Arrays.asList(values()));
+        private static final int SIZE = VALUES.size();
+        private static final Random RANDOM = new Random();
+
+        public static OfferType getRandomType(){
+            return VALUES.get(RANDOM.nextInt(SIZE));
         }
     }
 
@@ -57,6 +65,15 @@ public class Offer {
         public int getValue(){
             return this.value;
         }
+
+        private static final List<FloorType> VALUES =
+                Collections.unmodifiableList(Arrays.asList(values()));
+        private static final int SIZE = VALUES.size();
+        private static final Random RANDOM = new Random();
+
+        public static FloorType getRandomFloor(){
+            return VALUES.get(RANDOM.nextInt(SIZE));
+        }
     }
 
     //The variables are explained in constructor
@@ -65,7 +82,7 @@ public class Offer {
     protected String address;
     protected double price;
     public final OfferType type;
-    protected final long offerId;
+    protected long offerId;
     protected final long userId;
     protected FloorType floor;
     protected boolean isFurnished;
@@ -234,6 +251,7 @@ public class Offer {
                 ", address=" + this.address + ", price=" + this.price + ", surface=" + this.surface + ")\n";
     }
 
+
     //-----------------------------------------------------------------------------------------------
     //--------------------------------------COMPARATORS/2/-------------------------------------------
     //-----------------------------------------------------------------------------------------------
@@ -351,6 +369,10 @@ public class Offer {
     //simple setter
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void setOfferId(long id){
+        this.offerId = id;
     }
 
     //--------------------------------------------------------------------------------------------

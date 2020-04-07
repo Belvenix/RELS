@@ -148,8 +148,12 @@ public class Buyer extends User {
     }
 
     //As the name suggests it buys a real estate (very simplified)
-    private void buyOffer(){
+    protected void buyOffer(){
         System.out.println("You bought an offer!");
+    }
+
+    public void buyOffer(int index){
+        this.getServer().delOffer(this.getServer().getByIndex(index));
     }
 
     //--------------------------------------------------------------------------------------------

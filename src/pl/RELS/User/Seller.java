@@ -312,7 +312,7 @@ public class Seller extends User implements Comparable<Seller>, Cloneable{
     }
 
     /**
-     * Simple offer deleter handler which deletes on index i. This will delete the offer in both the Seller and Server.
+     * Simple offer deleter handler which deletes Offer on index i. This will delete the offer in both the Seller and Server.
      *
      * @param i - index at which we delete our offer
      */
@@ -323,7 +323,9 @@ public class Seller extends User implements Comparable<Seller>, Cloneable{
     }
 
     /**
-     * Simple offer deleter handler which deletes Object o. This will delete the offer in both the Seller and Server
+     * Simple offer deleter handler which deletes Offer by Object reference.
+     *
+     * This will delete the offer in both the Seller and Server
      * @param o - Offer object to be deleted
      */
     public void delOffer(Offer o){
