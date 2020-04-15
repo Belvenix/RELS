@@ -3,6 +3,7 @@ package pl.RELS.Offer;
 import pl.RELS.Server;
 import pl.RELS.User.Seller;
 
+import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -12,7 +13,7 @@ import java.util.*;
  * Offer class handles everything related to offers. It handles uploading and deleting offers as well as their proper
  * creation (although the input of the user is handled inside Seller class)
  */
-public class Offer {
+public class Offer implements Serializable {
 
 
 
@@ -181,6 +182,23 @@ public class Offer {
         this.followers = new ArrayList<Long>();
     }
 
+    public Offer(){
+        this.issueDate = new Timestamp(System.currentTimeMillis());
+        this.expirationDate = new Timestamp(System.currentTimeMillis());
+        this.address = "Polska;pomorskie;gdansk;wajdeloty;20;9";
+        this.price = 123456.75;
+        this.type = Offer.OfferType.SALE;
+        this.offerId = -1;
+        this.userId = -1;
+        this.floor = Offer.FloorType.GROUND;
+        this.isFurnished = true;
+        this.surface = 720.50;
+        this.rooms = 5;
+        this.description = "Super apartament kupuj smiało!";
+        this.viewCounter = 0;
+        this.followers = new ArrayList<Long>();
+    }
+
     //Constructor used for testing the Comparator Classes in the main method (Offer.class)
 
     public Offer(Seller s, double price, double surface){
@@ -248,10 +266,11 @@ public class Offer {
     @Override
     //The variables that are returned are: offerId as id, issueDate, expirationDate, address, price and surface area.
     public String toString(){
-        return "(id=" + this.userId + ", issueDate=" + this.issueDate + ", expirationDate=" + this.expirationDate +
-                ", address=" + this.address + ", price=" + this.price + ", surface=" + this.surface + ")\n";
+        return  "|issueDate=" + this.issueDate + "|expirationDate=" + this.expirationDate  + "|address=" + this.address +
+                "|price=" + this.price + "|type=" + this.type + "|offerId=" + this.offerId  + "userId=" + this.userId +
+                "|floor=" + this.floor + "|isFurnished=" + isFurnished + "|surface=" + this.surface +
+                "|rooms=" + this.rooms + "|description=" + this.description;
     }
-
 
     //-----------------------------------------------------------------------------------------------
     //--------------------------------------COMPARATORS/2/-------------------------------------------

@@ -7,6 +7,11 @@ import pl.RELS.User.Buyer;
 import pl.RELS.User.Seller;
 import pl.RELS.User.User;
 
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.*;
@@ -52,7 +57,7 @@ public class MainApp {
 
     public static void main(String[] args) {
         MainApp platform = new MainApp();
-        platform.runStatistics();
+        platform.runReadFiles();
     }
 
     /**
@@ -78,7 +83,6 @@ public class MainApp {
 
             String test;
 
-            //Polymorphism /4/
             User user = null;
             do {
                 System.out.print("Please specify whether you want to be a seller or buyer (enter 'seller' to become seller and"+
@@ -200,6 +204,219 @@ public class MainApp {
             System.out.print("\n---------------------------------------------------------------\n\n");
 
         }
+
+    }
+
+    public void runReadFiles(){
+        //We create needed variables.
+        Seller s = new Seller(server);
+        Scanner in = new Scanner(System.in);
+        HashMap<String, ArrayList<String>> adrHashMap = setupAddressHashMap();
+        OfferGenerator generator = new OfferGenerator(adrHashMap);
+
+        System.out.println("Welcome to the file save and load testing program. We assume that you are already signed in.\n" +
+                " In order to begin please specify how many offers you want to be generated \n(so that we can save them and load them): ");
+        int nOffers = in.nextInt();
+
+        //Here we generate our offers and upload them to the system (one user uploads them)
+        for (int i = 0; i < nOffers; i++) {
+            Offer o = generator.offerGenerator(s);
+            s.uploadOffer(o);
+        }
+
+        System.out.println("So After we generated the offers we will show them so that later we see that they are the same.");
+        for(Offer o : server.getAllOffers()){
+            System.out.println(o.toString());
+        }
+
+        System.out.println("Now please specify the path where you want to save the offers (Base folder will be 'res\\' folder in project directory): ");
+        String path = in.next();
+        while (true){
+            System.out.println("Specify file with the extension (only /txt/ and /dat/ are available):");
+            String token = in.next().toLowerCase();
+            if (token.endsWith(".txt")){
+                System.out.println("You choose txt extension.");
+                this.savetxt(server.getAllOffers(),  "res\\" + path, token);
+                break;
+            }
+            else if(token.endsWith(".dat")){
+                System.out.println("You choose binary extension.");
+                this.savebin(server.getAllOffers(), "res\\" + path, token);
+                break;
+            }
+            else if (token.endsWith(".ser")){
+                System.out.println("You choose to serialize the data.");
+                this.saveser(server.getAllOffers(), "res\\" + path, token);
+                break;
+            }
+            else{
+                System.out.println("The filename with extension you specified [" + token + "] is incorrect. Please try again.");
+            }
+        }
+
+        System.out.println("Now please specify the path from where you want to load the offers from (Base folder will be " +
+                " 'res\\' folder in project directory): ");
+        path = in.next();
+        while (true){
+            System.out.println("Specify file with the extension (only /txt/ and /dat/ are available):");
+            String token = in.next().toLowerCase();
+            if (token.endsWith(".txt")){
+                System.out.println("You choose txt extension.");
+                this.loadtxt("res\\" + path, token);
+                break;
+            }
+            else if(token.endsWith(".dat")){
+                System.out.println("You choose binary extension.");
+                this.loadbin("res\\" + path, token);
+                break;
+            }
+            else if (token.endsWith(".ser")){
+                System.out.println("You choose to serialize the data.");
+                ArrayList<Offer> n = this.loadser("res\\" + path, token);
+                for(Offer o : n){
+                    System.out.println(o.toString());
+                }
+                break;
+            }
+            else{
+                System.out.println("The filename with extension you specified [" + token + "] is incorrect. Please try again.");
+            }
+        }
+
+    }
+
+    private void savetxt(ArrayList<Offer> offers, String path, String filename){
+
+        String dir = Paths.get("").toAbsolutePath().toString() + "\\" + path;
+        //Path filePath = Paths.get(dir);
+        File directories = new File(dir);
+        if(!directories.exists()){
+            directories.mkdirs();
+        }
+        File file = new File(path + "\\" + filename);
+        try{
+            PrintWriter writer = new PrintWriter(file);
+            for(Offer o : offers){
+                writer.println(o.toString());
+            }
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void savebin(ArrayList<Offer> offers, String path, String filename){
+        String dir = Paths.get("").toAbsolutePath().toString() + "\\" + path;
+        File directories = new File(dir);
+        if(!directories.exists()){
+            directories.mkdirs();
+        }
+        File file = new File(path + "\\" + filename);
+        try(FileOutputStream fos = new FileOutputStream(file);
+            BufferedOutputStream bos = new BufferedOutputStream(fos);
+            DataOutputStream dos = new DataOutputStream(bos)){
+            for(Offer o : offers){
+                String [] data = o.toString().split("\\|");
+                for (String datum : data) {
+                    dos.writeBytes(datum + "\n");
+                }
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void saveser(ArrayList<Offer> offers, String path, String filename){
+        String dir = Paths.get("").toAbsolutePath().toString() + "\\" + path;
+        File directories = new File(dir);
+        if(!directories.exists()){
+            directories.mkdirs();
+        }
+        File file = new File(path + "\\" + filename);
+        try(FileOutputStream fos = new FileOutputStream(file);
+            ObjectOutputStream  oos = new ObjectOutputStream (fos)) {
+            oos.writeObject(offers);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private ArrayList<Offer> loadtxt(String path, String filename){
+        ArrayList<Offer> ret = new ArrayList<>();
+        String dir = Paths.get("").toAbsolutePath().toString() + "\\" + path;
+        File directories = new File(dir);
+        String filepath = path + "\\" + filename;
+        File file = new File(filepath);
+        if(file.exists()){
+            try(BufferedReader br = new BufferedReader(new FileReader(file))){
+                String line;
+                while ((line = br.readLine()) != null){
+                    String [] st = line.split("\\|");
+                    if(st.length == 12) {
+
+                    }
+
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            System.out.println("The file specified - " + filepath + " - does not exist");
+        }
+        return ret;
+    }
+
+    private ArrayList<Offer> loadbin(String path, String filename){
+        ArrayList<Offer> ret = new ArrayList<>();
+        String dir = Paths.get("").toAbsolutePath().toString() + "\\" + path;
+        File directories = new File(dir);
+        String filepath = path + "\\" + filename;
+        File file = new File(filepath);
+        if(file.exists()){
+            try(BufferedReader br = new BufferedReader(new InputStreamReader(
+                    new FileInputStream(file), StandardCharsets.UTF_8));){
+                String line;
+                while ((line = br.readLine()) != null){
+                    System.out.println(line);
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            System.out.println("The file specified - " + filepath + " - does not exist");
+        }
+        return ret;
+    }
+
+    private ArrayList<Offer> loadser(String path, String filename){
+        ArrayList<Offer> ret = new ArrayList<>();
+        String dir = Paths.get("").toAbsolutePath().toString() + "\\" + path;
+        File directories = new File(dir);
+        String filepath = path + "\\" + filename;
+        File file = new File(filepath);
+        if(file.exists()){
+            try(FileInputStream fis = new FileInputStream(file);
+                ObjectInputStream in = new ObjectInputStream(fis)){
+                ret = (ArrayList<Offer>) in.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            System.out.println("The file specified - " + filepath + " - does not exist");
+        }
+        return ret;
+    }
+
+    private void parseline(String line){
 
     }
 
