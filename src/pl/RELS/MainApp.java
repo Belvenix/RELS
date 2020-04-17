@@ -1,5 +1,6 @@
 package pl.RELS;
 import org.jetbrains.annotations.NotNull;
+import pl.RELS.FileChannelTest.FileHandler;
 import pl.RELS.MultiThreadding.LinearRegression;
 import pl.RELS.Offer.Offer;
 import pl.RELS.Offer.OfferGenerator;
@@ -39,8 +40,6 @@ public class MainApp {
     private static final Random RANDOM = new Random();
 
     private static final Scanner SCANNER = new Scanner(System.in);
-
-    private static final ReentrantLock FILELOCK = new ReentrantLock();
 
     /**
      * this variable if set to true will print ALL PROGRESS done in our runStatistics method. BEWARE - there will be
@@ -236,23 +235,16 @@ public class MainApp {
                             "'quit' - exits the program.\n");
                     break;
                 case "save":
-                    saveCLI(arrayList);
+                    FileHandler.saveCLI(arrayList);
                     break;
                 case "load":
-                    arrayList = loadCLI();
+                    arrayList = FileHandler.loadCLI();
                     break;
                 case "generate":
                     arrayList = generateOffersCLI(s);
                     break;
                 case "show":
-                    if (!arrayList.isEmpty()){
-                        for(Offer o : arrayList){
-                            System.out.println(o.toString());
-                        }
-                    }
-                    else{
-                        System.out.println("The array is empty! Please generate or load the data to show them.");
-                    }
+                    printArray(arrayList);
                     break;
                 case "mta":
                     multiThreadTest();
@@ -268,29 +260,33 @@ public class MainApp {
     }
 
     private void multiThreadTest(){
-        ExecutorService es = Executors.newFixedThreadPool(2);
         ArrayList<Offer> arrTest = generateOffersCLI(new Seller(server));
-        savebin(arrTest, "testing\\folder", "test.bin");
-        es.submit( ()->{
-                    System.out.println("Starting thread 1 - loading bin.");
-                    loadbin("testing\\folder", "test.bin");
-                    System.out.println("Finished thread 1 - loading bin.");
-                }
-        );
-        es.submit( ()->{
-                    System.out.println("Starting thread 2 - loading bin.");
-                    loadbin("testing\\folder", "test.bin");
-                    System.out.println("Finished thread 2 - loading bin.");
-                }
-        );
+        printArray(arrTest);
+        FileHandler.savetxt(arrTest, "testing\\folder", "test.txt");
+        FileHandler.savebin(arrTest, "testing\\folder", "test.dat");
+        FileHandler.saveser(arrTest, "testing\\folder", "test.ser");
+        arrTest = FileHandler.loadtxt("testing\\folder", "test.txt");
+        printArray(arrTest);
+        arrTest = FileHandler.loadbin("testing\\folder", "test.dat");
+        printArray(arrTest);
+        arrTest = FileHandler.loadser("testing\\folder", "test.ser");
+        printArray(arrTest);
+        //arrTest = FileHandler.loadCLI();
+    }
 
-        //Now we shutdown the threads - which are still running! hence we wait with the try catch clause
-        es.shutdown();
-        try {
-            //Now we wait for the termination up to 60 seconds
-            es.awaitTermination(60, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            es.shutdownNow();
+    private void printArray(ArrayList<Offer> arr){
+        if(arr != null){
+            if (!arr.isEmpty()){
+                for(Offer o : arr){
+                    System.out.println(o.toString());
+                }
+            }
+            else{
+                System.out.println("The array is empty! Please generate or load the data to show them.");
+            }
+        }
+        else {
+            System.out.println("The array provided is NA.");
         }
     }
 
@@ -310,250 +306,6 @@ public class MainApp {
         }
         System.out.println("Array has been successfully generated.");
         return arr;
-    }
-
-    private void saveCLI(ArrayList<Offer> arr){
-        System.out.println("Now please specify the path where you want to save the offers (Base folder will be 'res\\' folder in project directory)");
-        String baseUserDir = "res\\";
-        String path = SCANNER.next();
-        while (true){
-            System.out.println("Specify file with the extension. Only .txt, .dat (binary) and .ser (serialized) are available:");
-            String token = SCANNER.next().toLowerCase();
-            if (token.endsWith(".txt")){
-                System.out.println("You choose txt extension.");
-                this.savetxt(arr,  baseUserDir + path, token);
-                break;
-            }
-            else if(token.endsWith(".dat")){
-                System.out.println("You choose binary extension.");
-                this.savebin(arr, baseUserDir + path, token);
-                break;
-            }
-            else if (token.endsWith(".ser")){
-                System.out.println("You choose to serialize the data.");
-                this.saveser(arr, baseUserDir + path, token);
-                break;
-            }
-            else{
-                System.out.println("The filename with extension you specified [" + token + "] is incorrect. Please try again.");
-            }
-        }
-    }
-
-    private ArrayList<Offer> loadCLI(){
-        System.out.println("Now please specify the path from where you want to load the offers from (Base folder will be " +
-                " 'res\\' folder in project directory): ");
-        String path = SCANNER.next();
-        ArrayList<Offer> ret;
-        while (true){
-            System.out.println("Specify file with the extension. Only .txt, .dat (binary) and .ser (serialized) are available:");
-            String token = SCANNER.next().toLowerCase();
-            if (token.endsWith(".txt")){
-                System.out.println("You choose txt extension.");
-                ret = this.loadtxt("res\\" + path, token);
-                break;
-            }
-            else if(token.endsWith(".dat")){
-                System.out.println("You choose binary extension.");
-                ret = this.loadbin("res\\" + path, token);
-                break;
-            }
-            else if (token.endsWith(".ser")){
-                System.out.println("You choose to serialize the data.");
-                ret = this.loadser("res\\" + path, token);
-                break;
-            }
-            else{
-                System.out.println("The filename with extension you specified [" + token + "] is incorrect. Please try again.");
-            }
-        }
-        return ret;
-    }
-
-    private void savetxt(ArrayList<Offer> offers, String path, String filename){
-        String dir = Paths.get("").toAbsolutePath().toString() + "\\" + path;
-        File directories = new File(dir);
-        if(!directories.exists()){
-            directories.mkdirs();
-        }
-        File file = new File(path + "\\" + filename);
-        FILELOCK.lock();
-        try{
-            PrintWriter writer = new PrintWriter(file);
-            for(Offer o : offers){
-                writer.println(o.toString());
-            }
-            writer.close();
-            System.out.println("You have successfully saved the file " + filename);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.out.println(e.getMessage());
-        } finally {
-            FILELOCK.unlock();
-        }
-    }
-
-    private void savebin(ArrayList<Offer> offers, String path, String filename){
-        String dir = Paths.get("").toAbsolutePath().toString() + "\\" + path;
-        File directories = new File(dir);
-        if(!directories.exists()){
-            directories.mkdirs();
-        }
-        File file = new File(path + "\\" + filename);
-        FILELOCK.lock(); System.out.println("Locked the lock");
-        try(FileOutputStream fos = new FileOutputStream(file);
-            BufferedOutputStream bos = new BufferedOutputStream(fos);
-            DataOutputStream dos = new DataOutputStream(bos)){
-            for (Offer o : offers) {
-                byte[] data = (o.toString() + "\n").getBytes();
-                dos.write(data);
-            }
-            System.out.println("You have successfully saved the file " + filename);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.out.println(e.getMessage());
-        } finally {
-            FILELOCK.unlock();
-            System.out.println("Unlocked the lock");
-        }
-
-    }
-
-    private void saveser(ArrayList<Offer> offers, String path, String filename){
-        String dir = Paths.get("").toAbsolutePath().toString() + "\\" + path;
-        File directories = new File(dir);
-        if(!directories.exists()){
-            directories.mkdirs();
-        }
-        File file = new File(path + "\\" + filename);
-        FILELOCK.lock();
-        try(FileOutputStream fos = new FileOutputStream(file);
-            ObjectOutputStream  oos = new ObjectOutputStream (fos)) {
-            oos.writeObject(offers);
-            System.out.println("You have successfully saved the file " + filename);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.out.println(e.getMessage());
-        } finally {
-            FILELOCK.unlock();
-        }
-
-    }
-
-    private ArrayList<Offer> loadtxt(String path, String filename){
-        ArrayList<Offer> ret = new ArrayList<>();
-        String filepath = path + "\\" + filename;
-        File file = new File(filepath);
-        if(file.exists()){
-            try(BufferedReader br = new BufferedReader(new FileReader(file))){
-                FILELOCK.lock();
-                String line;
-                while ((line = br.readLine()) != null) {
-                    Offer o = null;
-                    o = parseline(line);
-                    if (o != null) {
-                        ret.add(o);
-                    }
-                }
-                System.out.println("You have successfully loaded the file " + filename);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                FILELOCK.unlock();
-            }
-        }
-        else {
-            System.out.println("The file specified - " + filepath + " - does not exist");
-        }
-
-        return ret;
-    }
-
-    private ArrayList<Offer> loadbin(String path, String filename){
-        ArrayList<Offer> ret = new ArrayList<>();
-        String filepath = path + "\\" + filename;
-        File file = new File(filepath);
-        if (file.exists()){
-            try(FileInputStream fis = new FileInputStream(file)){
-                FILELOCK.lock();
-                System.out.println("Locked the lock");
-                int ch;
-                String row = "";
-                while ((ch = fis.read()) != -1){
-                    if((char) ch != '\n'){
-                        row += (char) ch;
-                    }
-                    else{
-                        ret.add(parseline(row));
-                        row = "";
-                    }
-                }
-                System.out.println("You have successfully loaded the file " + filename);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                FILELOCK.unlock();
-                System.out.println("Unlocked the lock");
-            }
-
-        }
-        else{
-            System.out.println("The file specified - " + filepath + " - does not exist");
-        }
-
-        return ret;
-    }
-
-    private ArrayList<Offer> loadser(String path, String filename){
-        ArrayList<Offer> ret = new ArrayList<>();
-        String filepath = path + "\\" + filename;
-        File file = new File(filepath);
-        if (file.exists()){
-            try(FileInputStream fis = new FileInputStream(file);
-                ObjectInputStream in = new ObjectInputStream(fis)){
-                FILELOCK.lock();
-                ret = (ArrayList<Offer>) in.readObject();
-                System.out.println("You have successfully loaded the file " + filename);
-
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            } finally {
-                FILELOCK.unlock();
-            }
-        }
-        else {
-            System.out.println("The file specified - " + filepath + " - does not exist");
-        }
-        return ret;
-    }
-
-    private Offer parseline(String line){
-        String [] st = line.split("\\|");
-        Map<String, String> map = new HashMap<>();
-        if(st.length == 12) {
-            for (String data : st) {
-                String[] keyValue = data.split("=");
-                map.put(keyValue[0], keyValue[1]);
-            }
-            Timestamp ts1 = new Timestamp( Long.parseLong(map.get("issueDate")));
-            Timestamp ts2 = new Timestamp(Long.parseLong(map.get("expirationDate")));
-            String adr = map.get("address");
-            double p = Double.parseDouble(map.get("price"));
-            Offer.OfferType t = Offer.OfferType.valueOf(map.get("type"));
-            long oId = Long.parseLong(map.get("offerId"));
-            long uId = Long.parseLong(map.get("userId"));
-            Offer.FloorType f = Offer.FloorType.valueOf(map.get("floor"));
-            boolean furnish = Boolean.parseBoolean(map.get("isFurnished"));
-            double s = Double.parseDouble(map.get("surface"));
-            double r = Double.parseDouble(map.get("rooms"));
-            String desc = map.get("description");
-            return new Offer(ts1, ts2, adr, p, t, oId, uId, f, furnish, s, r, desc);
-        }
-        else{
-            return null;
-        }
-
-
     }
 
     /**
