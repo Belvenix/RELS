@@ -55,7 +55,7 @@ public class MainApp {
 
     public static void main(String[] args) {
         MainApp platform = new MainApp();
-        platform.runReadFiles();
+        platform.multiThreadTest();
     }
 
     /**
@@ -204,10 +204,15 @@ public class MainApp {
 
     }
 
+    /**
+     * Main function that consists of command line interface for a user.
+     * It enables user to input what he/she wants to do (help will show what is available) and then  start working with files
+     * The object to be saved is Offer since we may want to store it in files instead of in memory. It will be stored in
+     * text file, binary file and will be serialized (whole array). The rest of the function should be self-explanatory
+     */
     public void runReadFiles(){
         //We create needed variables - for the data generation.
         Seller s = new Seller(server);
-        Scanner in = new Scanner(System.in);
         ArrayList<Offer> arrayList = new ArrayList<>();
         String token="";
 
@@ -216,11 +221,6 @@ public class MainApp {
 
         while(!token.equals("quit")){
             System.out.println("Please specify action that you want to perform. If you do not know the commands please input 'help'");
-
-            //TODO
-            //  error handling of:
-            //      user inputs bad characters
-            //      user inputs slash in the end
 
             token = SCANNER.next().trim().toLowerCase();
             switch (token){
@@ -259,21 +259,31 @@ public class MainApp {
 
     }
 
+    /**
+     * Function that is used to test multiprocessing access. One has to run this function twice
+     * and Thread.Sleep inside the functions will wait to present that the files are locked.
+     * First we generate offers, print it, save it in 3 different ways and load it 3 different ways (every time we load
+     * we show the list on the screen)
+     */
     private void multiThreadTest(){
         ArrayList<Offer> arrTest = generateOffersCLI(new Seller(server));
+        System.out.println("Printing generated array:");
         printArray(arrTest);
-        FileHandler.savetxt(arrTest, "testing\\folder", "test.txt");
-        FileHandler.savebin(arrTest, "testing\\folder", "test.dat");
-        FileHandler.saveser(arrTest, "testing\\folder", "test.ser");
-        arrTest = FileHandler.loadtxt("testing\\folder", "test.txt");
+        FileHandler.savetxt(arrTest, "testing\\folder", "test.txt", true);
+        FileHandler.savebin(arrTest, "testing\\folder", "test.dat", true);
+        FileHandler.saveser(arrTest, "testing\\folder", "test.ser", true);
+        arrTest = FileHandler.loadtxt("testing\\folder", "test.txt", true);
         printArray(arrTest);
-        arrTest = FileHandler.loadbin("testing\\folder", "test.dat");
+        arrTest = FileHandler.loadbin("testing\\folder", "test.dat", true);
         printArray(arrTest);
-        arrTest = FileHandler.loadser("testing\\folder", "test.ser");
+        arrTest = FileHandler.loadser("testing\\folder", "test.ser", true);
         printArray(arrTest);
-        //arrTest = FileHandler.loadCLI();
     }
 
+    /**
+     * Wrapper function for printing an array with some checking
+     * @param arr ArrayList of Offers to be printed.
+     */
     private void printArray(ArrayList<Offer> arr){
         if(arr != null){
             if (!arr.isEmpty()){
@@ -290,6 +300,11 @@ public class MainApp {
         }
     }
 
+    /**
+     * Simple Command Line Interface which asks user to input number of offers to be generated.
+     * @param s - Seller object (someone that is logged in the account)
+     * @return - arraylist of offers
+     */
     private ArrayList<Offer> generateOffersCLI(Seller s){
         ArrayList<Offer> arr = new ArrayList<>();
         HashMap<String, ArrayList<String>> adrHashMap = setupAddressHashMap();
