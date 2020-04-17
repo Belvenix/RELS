@@ -55,7 +55,7 @@ public class MainApp {
 
     public static void main(String[] args) {
         MainApp platform = new MainApp();
-        platform.multiThreadTest();
+        platform.runReadFiles();
     }
 
     /**

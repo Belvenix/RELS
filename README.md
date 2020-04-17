@@ -36,5 +36,15 @@ który będzie na podstawie powierzchni domu przewidywał cenę domu (bardzo pod
 	2. Strefa krytyczna została zaprezentowana w zmiennej OutlierCount do której odwołują się wątki synchronicznie. Ma ona na celu zliczyc ilość domów które kompletnie nie są przewidywane przez model co może sygnalizować że musimy poprawić nasz model.
 	3. Raport w osobnym pliku .pdf
 
+---------------------------------------------------------------------------------------
 
+Lab 4:
+Aplikacja została ulepszona o możliwość zapisywania plików w wielu formatach - plikach tekstowych, plikach binarnych oraz jako zserializowany obiekt.
+Wiekszość elementow została zaimplementowana wewnatrz klasy FileHandler.
+	1. Czytanie i pisanie do i z plików tekstowych i binarnych jest w metodach saveCLI, savetxt, savebin, loadtxt, loadbin. Większość nietypowych
+	sytuacji podczas zapisywania plikow jest obsługiwana (niestety nie da sie przewidziec wszystkich czynności, które użytkownik może wykonać).
+	2. Serializacja i deserializacja została zaimplementowana na obiekcie Offer poprzez dodanie "implements Serializable". Poprawność ładowania i 
+	zapisywania została zaprezentowana wewnątrz metod saveser oraz loadser.
+	3. Wieloprocesowy dostep do plików został rózwnież zaimplementowany. Dwa procesy nie mogą jednocześnie czytac badz wpisywać do tego samego pliku jednocześnie. Został wykorzystany mechanizm FileLock.tryLock coby wypisywać informacje w linii poleceń. Żeby przetestować aplikację trzeba wpisac
+	odpowiednia komende na poczatku programu ('mta'). Aczkolwiek można pominąc pierwszy interfejs uzytkownika - w głównej funkcji nalezy zmienic "platform.runReadFiles();" na "platform.runReadFiles();".
 
