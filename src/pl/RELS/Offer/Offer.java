@@ -94,6 +94,9 @@ public class Offer implements Serializable {
     protected int viewCounter;
     protected ArrayList<Long> followers;
 
+    //Additional field so that serialization works 100% properly.
+    static final long serialVersionUID = 42L;
+
     /** Here is a constructor to our abstract class Offer.
      *
      * <p>
@@ -264,10 +267,9 @@ public class Offer implements Serializable {
     }
 
     @Override
-    //The variables that are returned are: offerId as id, issueDate, expirationDate, address, price and surface area.
     public String toString(){
-        return  "|issueDate=" + this.issueDate + "|expirationDate=" + this.expirationDate  + "|address=" + this.address +
-                "|price=" + this.price + "|type=" + this.type + "|offerId=" + this.offerId  + "userId=" + this.userId +
+        return  "issueDate=" + this.issueDate.getTime() + "|expirationDate=" + this.expirationDate.getTime()  + "|address=" + this.address +
+                "|price=" + this.price + "|type=" + this.type + "|offerId=" + this.offerId  + "|userId=" + this.userId +
                 "|floor=" + this.floor + "|isFurnished=" + isFurnished + "|surface=" + this.surface +
                 "|rooms=" + this.rooms + "|description=" + this.description;
     }

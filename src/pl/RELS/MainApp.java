@@ -8,14 +8,9 @@ import pl.RELS.User.Seller;
 import pl.RELS.User.User;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.*;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +27,7 @@ import static java.lang.Math.round;
     //Critical section management is implemented there.
 public class MainApp {
 
-    //Fields
+    //----------------------------------------FIELDS----------------------------------------
     /**
      * This field holds a reference to our server instance
      */
@@ -42,6 +37,10 @@ public class MainApp {
      * This field holds our RANDOM class so that we have only one (saving memory)
      */
     private static final Random RANDOM = new Random();
+
+    private static final Scanner SCANNER = new Scanner(System.in);
+
+    private static final ReentrantLock FILELOCK = new ReentrantLock();
 
     /**
      * this variable if set to true will print ALL PROGRESS done in our runStatistics method. BEWARE - there will be
@@ -64,22 +63,21 @@ public class MainApp {
      * Method responsible for running user interface
      */
     public void runMain(){
-        Scanner scan = new Scanner(System.in); // Initialize a new scanner object
         while (true){
             System.out.println( "Welcome to the Real Estate Listing System!" +
                     "\nThis application let's you search for your perfect rent apartment or you can even find"+
                     "\nyour perfect house! Obviously you can also list your real estate for both sale and rent!"+
                     "\nHowever before we jump into it please register yourself in our glorious platform!\n");
             System.out.print("Please enter your name: ");
-            String name = scan.next();
+            String name = SCANNER.next();
             System.out.print("Please enter your surname: ");
-            String surname = scan.next();
+            String surname = SCANNER.next();
             System.out.print("Please enter your desired username: ");
-            String username = scan.next();
+            String username = SCANNER.next();
             System.out.print("Please enter your desired password: ");
-            String password = scan.next();
+            String password = SCANNER.next();
             System.out.print("Please enter your credit card number: ");
-            String bankId = scan.next();
+            String bankId = SCANNER.next();
 
             String test;
 
@@ -87,7 +85,7 @@ public class MainApp {
             do {
                 System.out.print("Please specify whether you want to be a seller or buyer (enter 'seller' to become seller and"+
                         " 'buyer' to become a buyer): ");
-                test = scan.next();
+                test = SCANNER.next();
                 if (test.equals("seller")){
                     user = new Seller(name, surname, username, password, bankId, getServer());
                 }
@@ -208,101 +206,190 @@ public class MainApp {
     }
 
     public void runReadFiles(){
-        //We create needed variables.
+        //We create needed variables - for the data generation.
         Seller s = new Seller(server);
         Scanner in = new Scanner(System.in);
-        HashMap<String, ArrayList<String>> adrHashMap = setupAddressHashMap();
-        OfferGenerator generator = new OfferGenerator(adrHashMap);
+        ArrayList<Offer> arrayList = new ArrayList<>();
+        String token="";
 
-        System.out.println("Welcome to the file save and load testing program. We assume that you are already signed in.\n" +
-                " In order to begin please specify how many offers you want to be generated \n(so that we can save them and load them): ");
-        int nOffers = in.nextInt();
+        System.out.println("Welcome to the file save and load testing program. We assume that you are already signed in.\n");
 
-        //Here we generate our offers and upload them to the system (one user uploads them)
-        for (int i = 0; i < nOffers; i++) {
-            Offer o = generator.offerGenerator(s);
-            s.uploadOffer(o);
-        }
 
-        System.out.println("So After we generated the offers we will show them so that later we see that they are the same.");
-        for(Offer o : server.getAllOffers()){
-            System.out.println(o.toString());
-        }
+        while(!token.equals("quit")){
+            System.out.println("Please specify action that you want to perform. If you do not know the commands please input 'help'");
 
-        System.out.println("Now please specify the path where you want to save the offers (Base folder will be 'res\\' folder in project directory): ");
-        String path = in.next();
-        while (true){
-            System.out.println("Specify file with the extension (only /txt/ and /dat/ are available):");
-            String token = in.next().toLowerCase();
-            if (token.endsWith(".txt")){
-                System.out.println("You choose txt extension.");
-                this.savetxt(server.getAllOffers(),  "res\\" + path, token);
-                break;
-            }
-            else if(token.endsWith(".dat")){
-                System.out.println("You choose binary extension.");
-                this.savebin(server.getAllOffers(), "res\\" + path, token);
-                break;
-            }
-            else if (token.endsWith(".ser")){
-                System.out.println("You choose to serialize the data.");
-                this.saveser(server.getAllOffers(), "res\\" + path, token);
-                break;
-            }
-            else{
-                System.out.println("The filename with extension you specified [" + token + "] is incorrect. Please try again.");
-            }
-        }
+            //TODO
+            //  error handling of:
+            //      user inputs bad characters
+            //      user inputs slash in the end
 
-        System.out.println("Now please specify the path from where you want to load the offers from (Base folder will be " +
-                " 'res\\' folder in project directory): ");
-        path = in.next();
-        while (true){
-            System.out.println("Specify file with the extension (only /txt/ and /dat/ are available):");
-            String token = in.next().toLowerCase();
-            if (token.endsWith(".txt")){
-                System.out.println("You choose txt extension.");
-                this.loadtxt("res\\" + path, token);
-                break;
-            }
-            else if(token.endsWith(".dat")){
-                System.out.println("You choose binary extension.");
-                this.loadbin("res\\" + path, token);
-                break;
-            }
-            else if (token.endsWith(".ser")){
-                System.out.println("You choose to serialize the data.");
-                ArrayList<Offer> n = this.loadser("res\\" + path, token);
-                for(Offer o : n){
-                    System.out.println(o.toString());
-                }
-                break;
-            }
-            else{
-                System.out.println("The filename with extension you specified [" + token + "] is incorrect. Please try again.");
+            token = SCANNER.next().trim().toLowerCase();
+            switch (token){
+                case "help":
+                    System.out.println("Possible commands: \n" +
+                            "'help' - shows this help.\n" +
+                            "'save' - saves your current array of offers to specified file extension.\n" +
+                            "'load' - loads array of offers from specified file.\n" +
+                            "'generate' - generates an array of offers with specified number of elements.\n" +
+                            "'show' - shows your current array of offers.\n" +
+                            "'mta' - runs test program for MultiThreadAccess to files" +
+                            "'quit' - exits the program.\n");
+                    break;
+                case "save":
+                    saveCLI(arrayList);
+                    break;
+                case "load":
+                    arrayList = loadCLI();
+                    break;
+                case "generate":
+                    arrayList = generateOffersCLI(s);
+                    break;
+                case "show":
+                    if (!arrayList.isEmpty()){
+                        for(Offer o : arrayList){
+                            System.out.println(o.toString());
+                        }
+                    }
+                    else{
+                        System.out.println("The array is empty! Please generate or load the data to show them.");
+                    }
+                    break;
+                case "mta":
+                    multiThreadTest();
+                    break;
+                case "quit":
+                    System.out.println("Quitting the program. Thank you for your time!");
+                    break;
+                default:
+                    System.out.println("Invalid command has been entered [" + token + "]. Please refer to 'help' command.");
             }
         }
 
     }
 
-    private void savetxt(ArrayList<Offer> offers, String path, String filename){
+    private void multiThreadTest(){
+        ExecutorService es = Executors.newFixedThreadPool(2);
+        ArrayList<Offer> arrTest = generateOffersCLI(new Seller(server));
+        savebin(arrTest, "testing\\folder", "test.bin");
+        es.submit( ()->{
+                    System.out.println("Starting thread 1 - loading bin.");
+                    loadbin("testing\\folder", "test.bin");
+                    System.out.println("Finished thread 1 - loading bin.");
+                }
+        );
+        es.submit( ()->{
+                    System.out.println("Starting thread 2 - loading bin.");
+                    loadbin("testing\\folder", "test.bin");
+                    System.out.println("Finished thread 2 - loading bin.");
+                }
+        );
 
+        //Now we shutdown the threads - which are still running! hence we wait with the try catch clause
+        es.shutdown();
+        try {
+            //Now we wait for the termination up to 60 seconds
+            es.awaitTermination(60, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            es.shutdownNow();
+        }
+    }
+
+    private ArrayList<Offer> generateOffersCLI(Seller s){
+        ArrayList<Offer> arr = new ArrayList<>();
+        HashMap<String, ArrayList<String>> adrHashMap = setupAddressHashMap();
+        OfferGenerator generator = new OfferGenerator(adrHashMap);
+        System.out.println("In order to begin, please specify how many offers you want to be generated (so that we can save them and load them): ");
+        int nOffers = SCANNER.nextInt();
+        //Here we generate our offers and upload them to the system (our test user uploads them)
+
+        for (int i = 0; i < nOffers; i++) {
+            Offer o = generator.offerGenerator(s);
+            if(o != null){
+                arr.add(o);
+            }
+        }
+        System.out.println("Array has been successfully generated.");
+        return arr;
+    }
+
+    private void saveCLI(ArrayList<Offer> arr){
+        System.out.println("Now please specify the path where you want to save the offers (Base folder will be 'res\\' folder in project directory)");
+        String baseUserDir = "res\\";
+        String path = SCANNER.next();
+        while (true){
+            System.out.println("Specify file with the extension. Only .txt, .dat (binary) and .ser (serialized) are available:");
+            String token = SCANNER.next().toLowerCase();
+            if (token.endsWith(".txt")){
+                System.out.println("You choose txt extension.");
+                this.savetxt(arr,  baseUserDir + path, token);
+                break;
+            }
+            else if(token.endsWith(".dat")){
+                System.out.println("You choose binary extension.");
+                this.savebin(arr, baseUserDir + path, token);
+                break;
+            }
+            else if (token.endsWith(".ser")){
+                System.out.println("You choose to serialize the data.");
+                this.saveser(arr, baseUserDir + path, token);
+                break;
+            }
+            else{
+                System.out.println("The filename with extension you specified [" + token + "] is incorrect. Please try again.");
+            }
+        }
+    }
+
+    private ArrayList<Offer> loadCLI(){
+        System.out.println("Now please specify the path from where you want to load the offers from (Base folder will be " +
+                " 'res\\' folder in project directory): ");
+        String path = SCANNER.next();
+        ArrayList<Offer> ret;
+        while (true){
+            System.out.println("Specify file with the extension. Only .txt, .dat (binary) and .ser (serialized) are available:");
+            String token = SCANNER.next().toLowerCase();
+            if (token.endsWith(".txt")){
+                System.out.println("You choose txt extension.");
+                ret = this.loadtxt("res\\" + path, token);
+                break;
+            }
+            else if(token.endsWith(".dat")){
+                System.out.println("You choose binary extension.");
+                ret = this.loadbin("res\\" + path, token);
+                break;
+            }
+            else if (token.endsWith(".ser")){
+                System.out.println("You choose to serialize the data.");
+                ret = this.loadser("res\\" + path, token);
+                break;
+            }
+            else{
+                System.out.println("The filename with extension you specified [" + token + "] is incorrect. Please try again.");
+            }
+        }
+        return ret;
+    }
+
+    private void savetxt(ArrayList<Offer> offers, String path, String filename){
         String dir = Paths.get("").toAbsolutePath().toString() + "\\" + path;
-        //Path filePath = Paths.get(dir);
         File directories = new File(dir);
         if(!directories.exists()){
             directories.mkdirs();
         }
         File file = new File(path + "\\" + filename);
+        FILELOCK.lock();
         try{
             PrintWriter writer = new PrintWriter(file);
             for(Offer o : offers){
                 writer.println(o.toString());
             }
             writer.close();
+            System.out.println("You have successfully saved the file " + filename);
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println(e.getMessage());
+        } finally {
+            FILELOCK.unlock();
         }
     }
 
@@ -313,20 +400,23 @@ public class MainApp {
             directories.mkdirs();
         }
         File file = new File(path + "\\" + filename);
+        FILELOCK.lock(); System.out.println("Locked the lock");
         try(FileOutputStream fos = new FileOutputStream(file);
             BufferedOutputStream bos = new BufferedOutputStream(fos);
             DataOutputStream dos = new DataOutputStream(bos)){
-            for(Offer o : offers){
-                String [] data = o.toString().split("\\|");
-                for (String datum : data) {
-                    dos.writeBytes(datum + "\n");
-                }
-
+            for (Offer o : offers) {
+                byte[] data = (o.toString() + "\n").getBytes();
+                dos.write(data);
             }
+            System.out.println("You have successfully saved the file " + filename);
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println(e.getMessage());
+        } finally {
+            FILELOCK.unlock();
+            System.out.println("Unlocked the lock");
         }
+
     }
 
     private void saveser(ArrayList<Offer> offers, String path, String filename){
@@ -336,78 +426,99 @@ public class MainApp {
             directories.mkdirs();
         }
         File file = new File(path + "\\" + filename);
+        FILELOCK.lock();
         try(FileOutputStream fos = new FileOutputStream(file);
             ObjectOutputStream  oos = new ObjectOutputStream (fos)) {
             oos.writeObject(offers);
+            System.out.println("You have successfully saved the file " + filename);
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println(e.getMessage());
+        } finally {
+            FILELOCK.unlock();
         }
+
     }
 
     private ArrayList<Offer> loadtxt(String path, String filename){
         ArrayList<Offer> ret = new ArrayList<>();
-        String dir = Paths.get("").toAbsolutePath().toString() + "\\" + path;
-        File directories = new File(dir);
         String filepath = path + "\\" + filename;
         File file = new File(filepath);
         if(file.exists()){
             try(BufferedReader br = new BufferedReader(new FileReader(file))){
+                FILELOCK.lock();
                 String line;
-                while ((line = br.readLine()) != null){
-                    String [] st = line.split("\\|");
-                    if(st.length == 12) {
-
+                while ((line = br.readLine()) != null) {
+                    Offer o = null;
+                    o = parseline(line);
+                    if (o != null) {
+                        ret.add(o);
                     }
-
                 }
-
+                System.out.println("You have successfully loaded the file " + filename);
             } catch (IOException e) {
                 e.printStackTrace();
+            } finally {
+                FILELOCK.unlock();
             }
         }
         else {
             System.out.println("The file specified - " + filepath + " - does not exist");
         }
+
         return ret;
     }
 
     private ArrayList<Offer> loadbin(String path, String filename){
         ArrayList<Offer> ret = new ArrayList<>();
-        String dir = Paths.get("").toAbsolutePath().toString() + "\\" + path;
-        File directories = new File(dir);
         String filepath = path + "\\" + filename;
         File file = new File(filepath);
-        if(file.exists()){
-            try(BufferedReader br = new BufferedReader(new InputStreamReader(
-                    new FileInputStream(file), StandardCharsets.UTF_8));){
-                String line;
-                while ((line = br.readLine()) != null){
-                    System.out.println(line);
+        if (file.exists()){
+            try(FileInputStream fis = new FileInputStream(file)){
+                FILELOCK.lock();
+                System.out.println("Locked the lock");
+                int ch;
+                String row = "";
+                while ((ch = fis.read()) != -1){
+                    if((char) ch != '\n'){
+                        row += (char) ch;
+                    }
+                    else{
+                        ret.add(parseline(row));
+                        row = "";
+                    }
                 }
-
+                System.out.println("You have successfully loaded the file " + filename);
             } catch (IOException e) {
                 e.printStackTrace();
+            } finally {
+                FILELOCK.unlock();
+                System.out.println("Unlocked the lock");
             }
+
         }
-        else {
+        else{
             System.out.println("The file specified - " + filepath + " - does not exist");
         }
+
         return ret;
     }
 
     private ArrayList<Offer> loadser(String path, String filename){
         ArrayList<Offer> ret = new ArrayList<>();
-        String dir = Paths.get("").toAbsolutePath().toString() + "\\" + path;
-        File directories = new File(dir);
         String filepath = path + "\\" + filename;
         File file = new File(filepath);
-        if(file.exists()){
+        if (file.exists()){
             try(FileInputStream fis = new FileInputStream(file);
                 ObjectInputStream in = new ObjectInputStream(fis)){
+                FILELOCK.lock();
                 ret = (ArrayList<Offer>) in.readObject();
+                System.out.println("You have successfully loaded the file " + filename);
+
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
+            } finally {
+                FILELOCK.unlock();
             }
         }
         else {
@@ -416,7 +527,32 @@ public class MainApp {
         return ret;
     }
 
-    private void parseline(String line){
+    private Offer parseline(String line){
+        String [] st = line.split("\\|");
+        Map<String, String> map = new HashMap<>();
+        if(st.length == 12) {
+            for (String data : st) {
+                String[] keyValue = data.split("=");
+                map.put(keyValue[0], keyValue[1]);
+            }
+            Timestamp ts1 = new Timestamp( Long.parseLong(map.get("issueDate")));
+            Timestamp ts2 = new Timestamp(Long.parseLong(map.get("expirationDate")));
+            String adr = map.get("address");
+            double p = Double.parseDouble(map.get("price"));
+            Offer.OfferType t = Offer.OfferType.valueOf(map.get("type"));
+            long oId = Long.parseLong(map.get("offerId"));
+            long uId = Long.parseLong(map.get("userId"));
+            Offer.FloorType f = Offer.FloorType.valueOf(map.get("floor"));
+            boolean furnish = Boolean.parseBoolean(map.get("isFurnished"));
+            double s = Double.parseDouble(map.get("surface"));
+            double r = Double.parseDouble(map.get("rooms"));
+            String desc = map.get("description");
+            return new Offer(ts1, ts2, adr, p, t, oId, uId, f, furnish, s, r, desc);
+        }
+        else{
+            return null;
+        }
+
 
     }
 
